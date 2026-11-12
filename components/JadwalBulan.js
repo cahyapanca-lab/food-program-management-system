@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import Kalender from '@/components/Kalender'
+import PetaSemua from '@/components/PetaSemua'
+import PetaEmbed from '@/components/PetaEmbed'
 import { fmt, sum, porsiOf, kgOf } from '@/lib/util'
 
 // Kalender + ringkasan + daftar aksi untuk bulan yang dipilih.
@@ -29,6 +31,16 @@ export default function JadwalBulan({ events, onDay, onEvent }) {
         {ringkas.map(([n, v]) => <div className="card kpi" key={n}><b>{v}</b><span>{n}</span></div>)}
       </div>
 
+      {list.some((e) => e.latitude != null && e.longitude != null) || onEvent ? (
+        <>
+          <h3 style={{ marginTop: 18 }}>Peta lokasi aksi bulan ini</h3>
+          <PetaSemua hint={!!onEvent} height={320} items={list.filter((e) => e.latitude != null && e.longitude != null).map((e) => ({
+            id: e.id, lat: e.latitude, lng: e.longitude, title: e.lokasi, program: e.program,
+            sub: `${new Date(e.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}${e.kota ? ' - ' + e.kota : ''}`,
+          }))} />
+        </>
+      ) : null}
+
       {sel && (
         <div className="card">
           <b>{sel.lokasi}</b> <span className={`tag ${sel.program}`}>{sel.program}</span> {sel.selesai && <span className="m">(sudah terlaksana)</span>}
@@ -41,6 +53,7 @@ export default function JadwalBulan({ events, onDay, onEvent }) {
             {sel.jumlah_pm ? ` - ${sel.jumlah_pm} penerima manfaat` : ''}
           </div>
           {sel.segmentasi && <div className="m">{sel.segmentasi}</div>}
+          <PetaEmbed lat={sel.latitude} lng={sel.longitude} q={`${sel.lokasi} ${sel.kota || ''}`} />
           <div className="f"><button className="sec" onClick={() => setSel(null)}>Tutup</button></div>
         </div>
       )}

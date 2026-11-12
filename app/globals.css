@@ -60,3 +60,10 @@ th.s{cursor:pointer;user-select:none}
 .acard img,.acard .ph{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--a2);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
 iframe.map{width:100%;height:200px;border:0;border-radius:10px;margin-top:8px}
 @media(max-width:600px){.cd{min-height:62px;padding:2px}.ev{font-size:10px;padding:1px 3px}.wrap{padding:12px}}
+.hero{background:linear-gradient(135deg,#1f7a4d,#0f5132);color:#fff;border-radius:18px;padding:20px 22px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center}
+.hero h1{font-size:24px;color:#fff}.hero .hd{opacity:.85;font-size:13px}
+.hero button{background:#fff;color:#0f5132}.hero button.ghost{background:#ffffff26;color:#fff}
+.kpi .ic{font-size:22px;margin-bottom:4px}
+.pbar{height:10px;border-radius:99px;background:var(--a2);overflow:hidden;margin:8px 0 4px}.pbar>div{height:100%;background:var(--a);border-radius:99px}
+.dbadge{width:46px;flex:none;text-align:center;background:var(--a2);border-radius:10px;padding:4px 0;line-height:1.1}.dbadge b{display:block;font-size:18px}.dbadge small{font-size:11px;color:var(--m)}
+.sect{display:flex;justify-content:space-between;align-items:baseline;margin:24px 0 0}

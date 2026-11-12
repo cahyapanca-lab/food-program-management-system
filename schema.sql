@@ -17,6 +17,7 @@ create table aset (
   tahun_aset int,
   status text check (status in ('terbaru','perlu_update')),
   lokasi_maps text, latitude double precision, longitude double precision,
+  titik_perkiraan boolean not null default false,
   story text, keterangan text,
   foto_urls text[] not null default '{}',
   sudah_implementasi boolean not null default false,
@@ -63,6 +64,8 @@ create table jadwal_aksi (
   jumlah_bantuan numeric, satuan text,
   jumlah_pm int, segmentasi text,
   armada text, pic_driver text, keterangan text,
+  lokasi_maps text, latitude double precision, longitude double precision,
+  titik_perkiraan boolean not null default false,
   selesai boolean not null default false,
   publik boolean not null default true
 );
@@ -82,7 +85,7 @@ create policy relawan_kirim on pengajuan for insert to anon
   with check (status = 'baru' and aset_id is null);
 create policy relawan_lihat_jadwal on jadwal_aksi for select to anon using (publik = true);
 revoke select on jadwal_aksi from anon;
-grant select (id, tanggal, program, kota, lokasi, jumlah_bantuan, satuan, jumlah_pm, segmentasi, selesai, publik)
+grant select (id, tanggal, program, kota, lokasi, jumlah_bantuan, satuan, jumlah_pm, segmentasi, selesai, publik, latitude, longitude)
   on jadwal_aksi to anon;
 
 -- 5. TOMBOL SETUJUI: pindahkan pengajuan menjadi aset baru

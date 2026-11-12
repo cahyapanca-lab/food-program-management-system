@@ -4,6 +4,16 @@ import { supabase } from '@/lib/supabase'
 import { useTable } from '@/lib/useTable'
 import { uploadFoto } from '@/lib/storage'
 import { compressImage, cmp, waLink, TAHUN } from '@/lib/util'
+import { openUrl, parseCoords } from '@/lib/maps'
+import PetaSemua from '@/components/PetaSemua'
+import PetaEmbed from '@/components/PetaEmbed'
+import GeoTombol from '@/components/GeoTombol'
+
+function petaLink(a) {
+  if (a.latitude != null && a.longitude != null) return openUrl({ lat: a.latitude, lng: a.longitude })
+  if (/^https?:/.test(a.lokasi_maps || '')) return a.lokasi_maps
+  return openUrl({ q: `${a.nama} ${a.kota || ''}` })
+}
 
 const COLS = [
   ['Selesai', 'sudah_implementasi'], ['Nama aset', 'nama'], ['Kota', 'kota'], ['Cluster', 'cluster'],
@@ -22,6 +32,7 @@ export default function AsetPage() {
   const [fp, setFp] = useState(''); const [fi, setFi] = useState('')
   const [sort, setSort] = useState('nama:asc')
   const [edit, setEdit] = useState(null)
+  const [tampil, setTampil] = useState('tabel')
   const [key, dir] = sort.split(':')
 
   const uniq = (k) => [...new Set(rows.map((r) => r[k]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'id'))
@@ -57,6 +68,8 @@ export default function AsetPage() {
       <div className="card">
         <div className="f">
           <input placeholder="Cari nama aset / kota / PIC / nomor" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
+          <button className={tampil === 'tabel' ? '' : 'sec'} onClick={() => setTampil('tabel')}>📋 Tabel</button>
+          <button className={tampil === 'peta' ? '' : 'sec'} onClick={() => setTampil('peta')}>🗺 Peta</button>
           <button onClick={() => setEdit({ nama: '', tahun_aset: TAHUN, status: 'terbaru', foto_urls: [], sudah_implementasi: false })}>+ Aset</button>
         </div>
         <div className="f">
@@ -71,6 +84,18 @@ export default function AsetPage() {
           <button className="sec" onClick={reset}>Reset</button>
         </div>
         <div className="m">Menampilkan {list.length} dari {rows.length} aset. Klik judul kolom untuk mengurutkan.</div>
+        {tampil === 'peta' ? (
+          <>
+            <div className="f">
+              <GeoTombol table="aset" rows={rows} query={(a) => `${a.nama}, ${a.kota || ''}, Indonesia`} onDone={reload} />
+              <span className="m">{list.filter((a) => a.latitude != null && a.longitude != null).length} dari {list.length} aset (sesuai filter) punya titik lokasi</span>
+            </div>
+            <PetaSemua hint height={460} items={list.filter((a) => a.latitude != null && a.longitude != null).map((a) => ({
+              id: a.id, lat: a.latitude, lng: a.longitude, title: a.nama, program: a.program,
+              sub: `${a.kota || ''}${a.program ? ' - ' + a.program : ''}${a.jumlah_pm ? ' - ' + a.jumlah_pm + ' PM' : ''}${a.titik_perkiraan ? ' - titik perkiraan' : ''}`,
+            }))} />
+          </>
+        ) : (
         <div className="sc"><table>
           <thead><tr>{COLS.map(([l, k]) => (
             <th key={l || 'aksi'} className={k ? 's' : ''} onClick={() => klikKolom(k)}>{l}{k && k === key ? (dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>))}</tr></thead>
@@ -84,13 +109,14 @@ export default function AsetPage() {
                 <td>{a.program ? <span className={`tag ${a.program}`}>{a.program}</span> : '-'}</td>
                 <td>{a.jumlah_pm ?? '-'}</td><td>{a.pic || '-'}</td><td>{a.no_hp || '-'}</td>
                 <td>{a.status === 'perlu_update' ? 'Perlu update' : a.status === 'terbaru' ? 'Terbaru' : '-'}</td>
-                <td>{(a.latitude && a.longitude) ? <a target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${a.latitude},${a.longitude}`}>Buka</a> : /^https?:/.test(a.lokasi_maps || '') ? <a target="_blank" rel="noreferrer" href={a.lokasi_maps}>Buka</a> : '-'}</td>
+                <td><a target="_blank" rel="noreferrer" href={petaLink(a)}>Buka</a></td>
                 <td>{wa ? <a target="_blank" rel="noopener noreferrer" href={wa}><button type="button">Chat PIC</button></a> : <span className="m">Tidak ada nomor</span>}</td>
                 <td><button className="sec" onClick={() => setEdit(a)}>Edit</button></td>
               </tr>)
           })}
             {list.length === 0 && <tr><td colSpan={12} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
           </tbody></table></div>
+        )}
       </div>
       {edit && <EditAset a={edit} close={() => setEdit(null)} reload={reload} />}
     </>
@@ -116,6 +142,13 @@ function EditAset({ a, close, reload }) {
     setBusy(false)
     e.target.value = ''
   }
+  function gps() {
+    if (!navigator.geolocation) return setErr('Browser tidak mendukung GPS')
+    navigator.geolocation.getCurrentPosition(
+      (p) => setF((x) => ({ ...x, latitude: p.coords.latitude, longitude: p.coords.longitude, titik_perkiraan: false })),
+      () => setErr('Lokasi tidak bisa diambil, izinkan akses lokasi di browser'),
+      { enableHighAccuracy: true, timeout: 15000 })
+  }
   async function simpan() {
     if (!f.nama?.trim()) return setErr('Nama aset wajib diisi')
     const { id, dibuat_pada, ...rest } = f
@@ -136,7 +169,13 @@ function EditAset({ a, close, reload }) {
       <label>Program<select value={f.program || ''} onChange={set('program')}><option value="">-</option><option>FFC</option><option>BUYD</option></select></label>
       {inp('tahun_aset', 'Tahun aset', 'number')}
       <label>Status data<select value={f.status || ''} onChange={set('status')}><option value="">-</option><option value="terbaru">Terbaru</option><option value="perlu_update">Perlu update</option></select></label>
-      {inp('lokasi_maps', 'Link Google Maps')}{inp('latitude', 'Latitude', 'number')}{inp('longitude', 'Longitude', 'number')}
+      <label>Link Google Maps<input value={f.lokasi_maps ?? ''} onChange={(e) => { const c = parseCoords(e.target.value); setF({ ...f, lokasi_maps: e.target.value, ...(c ? { latitude: c.lat, longitude: c.lng, titik_perkiraan: false } : {}) }) }} placeholder="tempel link Google Maps" /></label>
+      <div className="grid">
+        <label>Latitude<input type="number" step="any" value={f.latitude ?? ''} onChange={(e) => setF({ ...f, latitude: e.target.value, titik_perkiraan: false })} /></label>
+        <label>Longitude<input type="number" step="any" value={f.longitude ?? ''} onChange={(e) => setF({ ...f, longitude: e.target.value, titik_perkiraan: false })} /></label>
+      </div>
+      <div className="f"><button type="button" className="sec" onClick={gps}>📍 Ambil titik lokasi saya</button>{f.titik_perkiraan && <span className="m">Titik perkiraan otomatis - periksa di peta lalu simpan</span>}</div>
+      <PetaEmbed lat={f.latitude} lng={f.longitude} q={`${f.nama || ''} ${f.kota || ''}`} />
       <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={!!f.sudah_implementasi} onChange={(e) => setF({ ...f, sudah_implementasi: e.target.checked })} /> Sudah terimplementasi</label>
       {inp('implementasi_terakhir', 'Implementasi terakhir', 'date')}
       <label>Story aset<textarea rows={5} value={f.story ?? ''} onChange={set('story')} /></label>

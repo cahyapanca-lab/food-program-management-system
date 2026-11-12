@@ -18,3 +18,13 @@ Halaman:
    lalu unggah seluruh isi folder ini.
 3. Vercel: import repo > Environment Variables `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` > Deploy.
 4. (Opsional) Salinan ke Google Sheet: ikuti petunjuk di `apps-script.gs`, isi `NEXT_PUBLIC_SHEETS_WEBHOOK` di Vercel, Redeploy.
+
+## Google Maps
+- Tanpa API key: tombol "Buka" ke Google Maps dan pratinjau peta per lokasi (di form edit aset, jadwal, dan detail jadwal) sudah berfungsi.
+- Dengan API key: peta semua titik di Dashboard, tab Peta di Data Aset, dan peta lokasi aksi bulanan di Jadwal, plus tombol
+  "Lengkapi titik lokasi otomatis" (hasilnya perkiraan, periksa lagi).
+  Cara: console.cloud.google.com > buat proyek > aktifkan billing (ada kuota gratis bulanan) > APIs & Services > Library >
+  aktifkan "Maps JavaScript API" dan "Geocoding API" > Credentials > Create credentials > API key.
+  Batasi key: Application restrictions = Websites, isi alamat Vercel-mu (contoh https://nama-proyek.vercel.app/*);
+  API restrictions = dua API di atas. Isi ke Vercel sebagai NEXT_PUBLIC_GOOGLE_MAPS_KEY, lalu Redeploy.
+- Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_peta.sql` sekali.

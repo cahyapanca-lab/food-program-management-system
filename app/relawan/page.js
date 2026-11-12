@@ -23,7 +23,7 @@ export default function Relawan() {
 
   useEffect(() => {
     supabase.from('jadwal_aksi')
-      .select('id,tanggal,program,kota,lokasi,jumlah_bantuan,satuan,jumlah_pm,segmentasi,selesai')
+      .select('id,tanggal,program,kota,lokasi,jumlah_bantuan,satuan,jumlah_pm,segmentasi,selesai,latitude,longitude')
       .order('tanggal').then(({ data }) => setJadwal(data || []))
   }, [])
 

@@ -4,6 +4,7 @@ import { useTable } from '@/lib/useTable'
 import { TAHUN, fmt, sum, count, iso, porsiOf, kgOf } from '@/lib/util'
 import Bars from '@/components/Bars'
 import Donut from '@/components/Donut'
+import PetaSemua from '@/components/PetaSemua'
 
 export default function Dashboard() {
   const { rows: aset, error } = useTable('aset')
@@ -12,46 +13,62 @@ export default function Dashboard() {
 
   const baru = aset.filter((a) => a.tahun_aset === TAHUN || a.dari_pengajuan)
   const impl = aset.filter((a) => a.sudah_implementasi).length
+  const persen = aset.length ? Math.round((impl / aset.length) * 100) : 0
   const menunggu = pgj.filter((p) => p.status === 'baru').length
-  const bulan = iso(new Date()).slice(0, 7)
-  const jadBulan = jad.filter((j) => j.tanggal.startsWith(bulan))
-  const mendatang = jad.filter((j) => !j.selesai && j.tanggal >= iso(new Date())).slice(0, 5)
+  const hari = iso(new Date())
+  const jadBulan = jad.filter((j) => j.tanggal.startsWith(hari.slice(0, 7)))
+  const mendatang = jad.filter((j) => !j.selesai && j.tanggal >= hari).slice(0, 5)
   const terbaru = [...baru].sort((a, b) => b.id - a.id).slice(0, 6)
+  const titik = aset.filter((a) => a.latitude != null && a.longitude != null)
 
   const kpi = [
-    ['Total aset', aset.length],
-    ['Penerima manfaat', fmt(sum(aset, 'jumlah_pm'))],
-    [`Aset baru ${TAHUN}`, baru.length],
-    ['Sudah implementasi', `${impl} / ${aset.length}`],
-    ['Pengajuan menunggu', menunggu],
-    ['Aksi bulan ini', jadBulan.length],
+    ['🏠', 'Total aset', aset.length],
+    ['👥', 'Penerima manfaat', fmt(sum(aset, 'jumlah_pm'))],
+    ['✨', `Aset baru ${TAHUN}`, baru.length],
+    ['🗓', 'Aksi bulan ini', jadBulan.length],
   ]
 
   return (
     <>
-      <h1>Dashboard Program Pangan</h1>
-      <div className="m">Ringkasan BUYD &amp; FFC - diperbarui otomatis</div>
+      <div className="hero">
+        <div>
+          <h1>Program Pangan</h1>
+          <div>Sekolah Relawan - BUYD &amp; FFC</div>
+          <div className="hd">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
+        </div>
+        <div className="f" style={{ margin: 0 }}>
+          {menunggu > 0 && <Link href="/admin/pengajuan"><button>🔔 {menunggu} pengajuan baru</button></Link>}
+          <Link href="/admin/aset"><button className="ghost">Data aset</button></Link>
+          <Link href="/admin/jadwal"><button className="ghost">Jadwal aksi</button></Link>
+        </div>
+      </div>
       {error && <div className="err">{error}</div>}
+
       <div className="grid" style={{ marginTop: 14 }}>
-        {kpi.map(([n, v]) => <div className="card kpi" key={n}><b>{v}</b><span>{n}</span></div>)}
+        {kpi.map(([ic, n, v]) => <div className="card kpi" key={n}><div className="ic">{ic}</div><b>{v}</b><span>{n}</span></div>)}
+        <div className="card kpi">
+          <div className="ic">✅</div><b>{persen}%</b><span>Aset sudah terimplementasi ({impl}/{aset.length})</span>
+          <div className="pbar"><div style={{ width: `${persen}%` }} /></div>
+        </div>
       </div>
 
-      {menunggu > 0 && (
-        <Link href="/admin/pengajuan" className="card block" style={{ borderColor: 'var(--o)' }}>
-          🔔 {menunggu} pengajuan aset baru menunggu verifikasi - buka
-        </Link>
-      )}
-
-      <h2 style={{ marginTop: 22 }}>Infografis Aset Baru {TAHUN}</h2>
-      <div className="grid2">
-        <div className="card"><h3>Aset baru vs lama</h3><Donut a={baru.length} b={aset.length - baru.length} labelA="Aset baru" labelB="Aset lama" /></div>
-        <div className="card"><h3>Aset baru per program</h3><Bars data={count(baru, (a) => a.program || 'Belum dikategorikan')} /></div>
-        <div className="card"><h3>Aset baru per cluster</h3><Bars data={count(baru, (a) => a.cluster)} /></div>
-        <div className="card"><h3>Aset baru per kota (8 teratas)</h3><Bars data={count(baru, (a) => a.kota).slice(0, 8)} /></div>
+      <div className="sect"><h2>Peta Sebaran Aset</h2><Link href="/admin/aset">Kelola data aset</Link></div>
+      <div className="card" style={{ marginTop: 8 }}>
+        <PetaSemua hint height={340} items={titik.map((a) => ({
+          id: a.id, lat: a.latitude, lng: a.longitude, title: a.nama, program: a.program,
+          sub: `${a.kota || ''}${a.jumlah_pm ? ' - ' + a.jumlah_pm + ' PM' : ''}`,
+        }))} />
+        <div className="m" style={{ marginTop: 8 }}>{titik.length} dari {aset.length} aset sudah punya titik lokasi.</div>
       </div>
 
+      <div className="sect"><h2>Aset Baru {TAHUN}</h2></div>
+      <div className="grid2" style={{ marginTop: 8 }}>
+        <div className="card"><h3>Baru vs lama</h3><Donut a={baru.length} b={aset.length - baru.length} labelA="Aset baru" labelB="Aset lama" /></div>
+        <div className="card"><h3>Per program</h3><Bars data={count(baru, (a) => a.program || 'Belum dikategorikan')} /></div>
+        <div className="card"><h3>Per kota (6 teratas)</h3><Bars data={count(baru, (a) => a.kota).slice(0, 6)} /></div>
+      </div>
       <div className="card">
-        <h3>Aset baru terbaru</h3>
+        <h3>Aset terbaru</h3>
         {terbaru.length === 0 && <div className="m">Belum ada aset baru.</div>}
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))' }}>
           {terbaru.map((a) => (
@@ -60,33 +77,25 @@ export default function Dashboard() {
               <div>
                 <b>{a.nama}</b>
                 <div className="m">{a.kota || '-'} {a.program && <span className={`tag ${a.program}`}>{a.program}</span>}</div>
-                <div className="m">{a.jumlah_pm ? `${a.jumlah_pm} penerima manfaat` : ''}</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <h2 style={{ marginTop: 22 }}>Sebaran Seluruh Aset</h2>
-      <div className="grid2">
-        <div className="card"><h3>Per cluster</h3><Bars data={count(aset, (a) => a.cluster)} /></div>
-        <div className="card"><h3>Per kota (10 teratas)</h3><Bars data={count(aset, (a) => a.kota).slice(0, 10)} /></div>
-        <div className="card"><h3>Per tahun aset</h3><Bars data={count(aset, (a) => a.tahun_aset || 'Tanpa tahun')} /></div>
-      </div>
-
-      <div className="card">
-        <div className="f" style={{ justifyContent: 'space-between', margin: 0 }}>
-          <h3 style={{ margin: 0 }}>Jadwal aksi bulan ini</h3>
-          <Link href="/admin/jadwal">Lihat kalender</Link>
-        </div>
-        <div className="m">{jadBulan.length} aksi - {fmt(porsiOf(jadBulan))} porsi - {fmt(kgOf(jadBulan))} kg beras - {fmt(sum(jadBulan, 'jumlah_pm'))} penerima manfaat</div>
+      <div className="sect"><h2>Jadwal Aksi</h2><Link href="/admin/jadwal">Buka kalender</Link></div>
+      <div className="card" style={{ marginTop: 8 }}>
+        <div className="m">Bulan ini: {jadBulan.length} aksi - {fmt(porsiOf(jadBulan))} porsi - {fmt(kgOf(jadBulan))} kg beras - {fmt(sum(jadBulan, 'jumlah_pm'))} penerima manfaat</div>
         {mendatang.length === 0 && <div className="m" style={{ marginTop: 8 }}>Tidak ada aksi mendatang.</div>}
-        {mendatang.map((j) => (
-          <div className="row" key={j.id}>
-            <b style={{ minWidth: 92 }}>{new Date(j.tanggal).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}</b>
-            <span className={`tag ${j.program}`}>{j.program}</span> {j.lokasi}
-          </div>
-        ))}
+        {mendatang.map((j) => {
+          const d = new Date(j.tanggal)
+          return (
+            <div className="acard" key={j.id} style={{ marginTop: 10 }}>
+              <div className="dbadge"><b>{d.getDate()}</b><small>{d.toLocaleDateString('id-ID', { month: 'short' })}</small></div>
+              <div><b>{j.lokasi}</b> <span className={`tag ${j.program}`}>{j.program}</span>
+                <div className="m">{j.kota}{j.jumlah_bantuan ? ` - ${j.jumlah_bantuan} ${j.satuan || ''}` : ''}</div></div>
+            </div>)
+        })}
       </div>
     </>
   )
