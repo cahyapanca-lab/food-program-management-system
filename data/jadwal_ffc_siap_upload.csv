@@ -1,0 +1,7 @@
+tanggal,program,kota,lokasi,sumber_dana,pelaksana,jejaring,jumlah_bantuan,satuan,jumlah_pm,segmentasi,armada,pic_driver,keterangan,selesai,publik
+2026-11-15,FFC,Jakarta Utara,Panti asuhan Koja,,SR,,80,porsi,100,Panti Asuhan Anak Anak,Mobil FFC,Panca,,false,true
+2026-11-16,FFC,Depok,Masjid merah baiturahman,,SR,,180,porsi,300,,Mobil FFC,Panca,,false,true
+2026-11-17,FFC,Cibinong,Ponpes Asholihin Cibinong,,SR,,150,porsi,100,Pesantren,Mobil FFC,Panca,,false,true
+2026-11-19,FFC,Bekasi,Taman Bulan Bulan Bekasi,,SR,,120,porsi,150,,Mobil FFC,Panca,,false,true
+2026-11-20,FFC,,Kp Nelayan Cilincing,,SR,,60,porsi,200,,Mobil FFC,Panca,,false,true
+2026-11-21,FFC,,Kp Tuna Netra Palembang,,Jejaring,,200,porsi,150,,Mobil FFC,Relawan,,false,true
