@@ -54,7 +54,7 @@ export default function Dashboard() {
 
       <div className="sect"><h2>Peta Sebaran Aset</h2><Link href="/admin/aset">Kelola data aset</Link></div>
       <div className="card" style={{ marginTop: 8 }}>
-        <PetaSemua hint height={340} items={titik.map((a) => ({
+        <PetaSemua height={340} items={titik.map((a) => ({
           id: a.id, lat: a.latitude, lng: a.longitude, title: a.nama, program: a.program,
           sub: `${a.kota || ''}${a.jumlah_pm ? ' - ' + a.jumlah_pm + ' PM' : ''}`,
         }))} />

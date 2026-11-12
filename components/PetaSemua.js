@@ -1,71 +1,66 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
-import { MAPS_KEY, loadGoogleMaps, openUrl } from '@/lib/maps'
+import { useEffect, useRef } from 'react'
+import 'leaflet/dist/leaflet.css'
+import { openUrl } from '@/lib/maps'
 
 const WARNA = { FFC: '#1f7a4d', BUYD: '#d97706' }
 
-// peta Google dengan banyak titik. items: [{id, lat, lng, title, sub, program}]
-export default function PetaSemua({ items, height = 380, hint = false }) {
+// Peta banyak titik: Leaflet + OpenStreetMap (gratis, tanpa API key).
+// items: [{id, lat, lng, title, sub, program}]
+export default function PetaSemua({ items, height = 380 }) {
   const el = useRef(null)
-  const map = useRef(null)
-  const marks = useRef([])
+  const state = useRef({ map: null, layer: null })
   const itemsRef = useRef(items)
   itemsRef.current = items
-  const [err, setErr] = useState('')
   const sig = items.map((i) => `${i.id}:${i.lat},${i.lng}`).join('|')
 
   useEffect(() => {
-    if (!MAPS_KEY) return
     let off = false
-    loadGoogleMaps().then((maps) => {
+    ;(async () => {
+      const L = (await import('leaflet')).default
       if (off || !el.current) return
-      if (!map.current) {
-        map.current = new maps.Map(el.current, { center: { lat: -2.5, lng: 118 }, zoom: 4, mapTypeControl: false, streetViewControl: false })
+      const st = state.current
+      if (!st.map) {
+        st.map = L.map(el.current, { scrollWheelZoom: false }).setView([-2.5, 118], 4)
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+        }).addTo(st.map)
+        st.layer = L.layerGroup().addTo(st.map)
       }
-      marks.current.forEach((m) => m.setMap(null))
-      marks.current = []
-      const info = new maps.InfoWindow()
-      const bounds = new maps.LatLngBounds()
-      const list = itemsRef.current
-      list.forEach((it) => {
-        const pos = { lat: Number(it.lat), lng: Number(it.lng) }
-        const m = new maps.Marker({
-          position: pos, map: map.current, title: it.title,
-          icon: { path: maps.SymbolPath.CIRCLE, scale: 9, fillColor: WARNA[it.program] || '#64748b', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 2 },
-        })
-        m.addListener('click', () => {
-          const box = document.createElement('div')
-          box.style.cssText = 'color:#1d2a22;font:13px system-ui;max-width:230px;line-height:1.4'
-          const t = document.createElement('b'); t.textContent = it.title; box.appendChild(t)
-          if (it.sub) { const s = document.createElement('div'); s.textContent = it.sub; box.appendChild(s) }
-          const a = document.createElement('a')
-          a.href = openUrl({ lat: it.lat, lng: it.lng }); a.target = '_blank'; a.rel = 'noreferrer'; a.textContent = 'Buka di Google Maps'
-          box.appendChild(a)
-          info.setContent(box); info.open(map.current, m)
-        })
-        marks.current.push(m)
-        bounds.extend(pos)
+      st.layer.clearLayers()
+      const pts = []
+      itemsRef.current.forEach((it) => {
+        const ll = [Number(it.lat), Number(it.lng)]
+        const m = L.circleMarker(ll, { radius: 8, color: '#ffffff', weight: 2, fillColor: WARNA[it.program] || '#64748b', fillOpacity: 1 })
+        const box = document.createElement('div')
+        box.style.cssText = 'font:13px system-ui;line-height:1.4;max-width:220px'
+        const t = document.createElement('b'); t.textContent = it.title; box.appendChild(t)
+        if (it.sub) { const s = document.createElement('div'); s.textContent = it.sub; box.appendChild(s) }
+        const a = document.createElement('a')
+        a.href = openUrl({ lat: it.lat, lng: it.lng }); a.target = '_blank'; a.rel = 'noreferrer'; a.textContent = 'Buka di Google Maps'
+        box.appendChild(a)
+        m.bindPopup(box)
+        m.addTo(st.layer)
+        pts.push(ll)
       })
-      if (list.length > 1) map.current.fitBounds(bounds, 48)
-      else if (list.length === 1) { map.current.setCenter({ lat: Number(list[0].lat), lng: Number(list[0].lng) }); map.current.setZoom(14) }
-    }).catch((e) => setErr(e.message))
+      if (pts.length > 1) st.map.fitBounds(pts, { padding: [40, 40] })
+      else if (pts.length === 1) st.map.setView(pts[0], 14)
+    })()
     return () => { off = true }
   }, [sig])
 
-  if (!MAPS_KEY) {
-    return hint ? (
-      <div className="card m" style={{ marginTop: 0 }}>
-        🗺 Peta semua titik membutuhkan API key Google Maps. Isi variabel <b>NEXT_PUBLIC_GOOGLE_MAPS_KEY</b> di Vercel (panduan ada di README). Pratinjau peta per lokasi tetap berfungsi tanpa key.
-      </div>
-    ) : null
-  }
+  useEffect(() => () => {
+    const st = state.current
+    if (st.map) { st.map.remove(); st.map = null; st.layer = null }
+  }, [])
+
   return (
     <div>
       <div className="m" style={{ marginBottom: 6 }}>
         <span style={{ color: WARNA.FFC }}>●</span> FFC &nbsp;<span style={{ color: WARNA.BUYD }}>●</span> BUYD &nbsp;<span style={{ color: '#64748b' }}>●</span> Belum dikategorikan - {items.length} titik
       </div>
-      {err && <div className="err">{err}</div>}
-      <div ref={el} style={{ height, borderRadius: 12, background: 'var(--a2)' }} />
+      <div ref={el} style={{ height, borderRadius: 12, background: 'var(--a2)', isolation: 'isolate' }} />
       {items.length === 0 && <div className="m" style={{ marginTop: 6 }}>Belum ada data dengan titik lokasi.</div>}
     </div>
   )

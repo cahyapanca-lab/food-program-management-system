@@ -90,7 +90,7 @@ export default function AsetPage() {
               <GeoTombol table="aset" rows={rows} query={(a) => `${a.nama}, ${a.kota || ''}, Indonesia`} onDone={reload} />
               <span className="m">{list.filter((a) => a.latitude != null && a.longitude != null).length} dari {list.length} aset (sesuai filter) punya titik lokasi</span>
             </div>
-            <PetaSemua hint height={460} items={list.filter((a) => a.latitude != null && a.longitude != null).map((a) => ({
+            <PetaSemua height={460} items={list.filter((a) => a.latitude != null && a.longitude != null).map((a) => ({
               id: a.id, lat: a.latitude, lng: a.longitude, title: a.nama, program: a.program,
               sub: `${a.kota || ''}${a.program ? ' - ' + a.program : ''}${a.jumlah_pm ? ' - ' + a.jumlah_pm + ' PM' : ''}${a.titik_perkiraan ? ' - titik perkiraan' : ''}`,
             }))} />

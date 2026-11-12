@@ -34,7 +34,7 @@ export default function JadwalBulan({ events, onDay, onEvent }) {
       {list.some((e) => e.latitude != null && e.longitude != null) || onEvent ? (
         <>
           <h3 style={{ marginTop: 18 }}>Peta lokasi aksi bulan ini</h3>
-          <PetaSemua hint={!!onEvent} height={320} items={list.filter((e) => e.latitude != null && e.longitude != null).map((e) => ({
+          <PetaSemua height={320} items={list.filter((e) => e.latitude != null && e.longitude != null).map((e) => ({
             id: e.id, lat: e.latitude, lng: e.longitude, title: e.lokasi, program: e.program,
             sub: `${new Date(e.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}${e.kota ? ' - ' + e.kota : ''}`,
           }))} />
