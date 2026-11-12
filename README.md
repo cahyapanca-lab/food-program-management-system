@@ -25,3 +25,9 @@ Halaman:
 - Titik lokasi: dari GPS (tombol "Ambil titik lokasi saya"), dari link Google Maps panjang yang ditempel, atau otomatis lewat
   tombol "Lengkapi titik lokasi otomatis" (OpenStreetMap Nominatim, perkiraan, sekitar 1 permintaan per detik).
 - Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_peta.sql` sekali.
+
+## Fitur tambahan (v2.1)
+- Jalankan `migrasi_fitur_baru.sql` sekali di Supabase SQL Editor (kolom keterangan + berkas santri, bucket privat `data-santri`).
+- Lalu unggah kode ke GitHub; Vercel akan menjalankan `npm install` otomatis (ada paket baru: exceljs, jszip, pptxgenjs).
+- `/relawan`: keterangan opsional, minimal 5 foto (maks. 10), upload data santri (PDF/Word/gambar, privat).
+- `/admin/unduhan`: unduh Excel, ZIP foto + data santri per pondok, dan rekap aksi mingguan/bulanan dalam PPT.

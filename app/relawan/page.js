@@ -1,19 +1,20 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { uploadFoto } from '@/lib/storage'
+import { uploadFoto, uploadBerkas } from '@/lib/storage'
 import { compressImage, mapsLink } from '@/lib/util'
 import JadwalBulan from '@/components/JadwalBulan'
 
 const AWAL = {
   program: 'BUYD', nama_pengaju: '', no_telp: '', organisasi: '', alamat_pengaju: '',
   nama_pondok: '', jenis: 'Pondok pesantren', kota: '', alamat_pondok: '', jumlah_penghuni: '',
-  pimpinan: '', konsumsi_beras_kg: '', kategori: '', story: '', lokasi_maps: '', website: '',
+  pimpinan: '', konsumsi_beras_kg: '', kategori: '', story: '', catatan_relawan: '', lokasi_maps: '', website: '',
 }
 
 export default function Relawan() {
   const [f, setF] = useState(AWAL)
   const [fotos, setFotos] = useState([null, null, null, null, null])
+  const [berkas, setBerkas] = useState([])
   const [loc, setLoc] = useState(null)
   const [locMsg, setLocMsg] = useState('')
   const [locBusy, setLocBusy] = useState(false)
@@ -38,6 +39,14 @@ export default function Relawan() {
   }
   const hapusFoto = (i) => setFotos((cur) => cur.map((x, k) => (k === i ? null : x)))
 
+  function pilihBerkas(e) {
+    const ok = [], lewat = []
+    for (const b of e.target.files) (b.size <= 10 * 1024 * 1024 ? ok : lewat).push(b)
+    e.target.value = ''
+    setBerkas((cur) => [...cur, ...ok].slice(0, 10))
+    setMsg(lewat.length ? `${lewat.length} file dilewati (lebih dari 10 MB): ${lewat.map((b) => b.name).join(', ')}` : '')
+  }
+
   function ambilLokasi() {
     setLocMsg('')
     if (!navigator.geolocation) return setLocMsg('Browser ini tidak mendukung GPS. Tempel link Google Maps di bawah.')
@@ -53,18 +62,21 @@ export default function Relawan() {
     e.preventDefault()
     setMsg('')
     const terpilih = fotos.filter(Boolean)
-    if (terpilih.length < 1) return setMsg('Tambahkan minimal 1 foto dokumentasi.')
+    if (terpilih.length < 5) return setMsg(`Tambahkan minimal 5 foto dokumentasi (baru ${terpilih.length}).`)
     if (!loc && !f.lokasi_maps.trim()) return setMsg('Ambil titik lokasi atau tempel link Google Maps.')
     setBusy(true)
     try {
       const urls = []
       for (const x of terpilih) urls.push(await uploadFoto('pengajuan', x.file))
+      const paths = []
+      for (const b of berkas) paths.push(await uploadBerkas('pengajuan', b))
       const num = (v) => (v === '' ? null : Number(v))
       const row = {
         ...f,
         jumlah_penghuni: num(f.jumlah_penghuni),
         konsumsi_beras_kg: num(f.konsumsi_beras_kg),
         foto_urls: urls,
+        file_santri: paths,
         latitude: loc ? loc.lat : null,
         longitude: loc ? loc.lng : null,
         lokasi_maps: f.lokasi_maps.trim() || (loc ? mapsLink(loc.lat, loc.lng) : null),
@@ -76,7 +88,7 @@ export default function Relawan() {
       if (hook) {
         fetch(hook, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...row, foto_urls: urls.join('\n') }) }).catch(() => {})
       }
-      setMsg('ok'); setF(AWAL); setFotos([null, null, null, null, null]); setLoc(null)
+      setMsg('ok'); setF(AWAL); setFotos([null, null, null, null, null]); setBerkas([]); setLoc(null)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setMsg('Gagal mengirim: ' + (err.message || 'coba lagi'))
@@ -118,8 +130,8 @@ export default function Relawan() {
         <label>Kategori santri<input value={f.kategori} onChange={set('kategori')} maxLength={200} placeholder="contoh: 80% dhuafa, hampir semua gratis" /></label>
         <label>Kenapa harus dibantu? (story / biografi)<textarea rows={6} value={f.story} onChange={set('story')} maxLength={3000} /></label>
 
-        <h2 style={{ marginTop: 22 }}>Foto Dokumentasi (maks. 5)</h2>
-        <div className="m">Di HP, tombol “Kamera” langsung membuka kamera. Minimal 1 foto.</div>
+        <h2 style={{ marginTop: 22 }}>Foto Dokumentasi (minimal 5, maks. 10)</h2>
+        <div className="m">Di HP, tombol “Kamera” langsung membuka kamera. Minimal 5 foto.</div>
         <div className="thumbs" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))' }}>
           {fotos.map((x, i) => (
             <div className="slot" key={i}>
@@ -130,6 +142,18 @@ export default function Relawan() {
             </div>
           ))}
         </div>
+
+        {fotos.length < 10 && <div className="f"><button type="button" className="sec" onClick={() => setFotos((c) => [...c, null])}>+ Tambah slot foto</button></div>}
+
+        <h2 style={{ marginTop: 22 }}>Keterangan Tambahan (opsional)</h2>
+        <label>Rekomendasi Ramadhan atau catatan lain<textarea rows={4} value={f.catatan_relawan} onChange={set('catatan_relawan')} maxLength={1500} /></label>
+
+        <h2 style={{ marginTop: 22 }}>Data Santri (opsional)</h2>
+        <div className="m">Unggah PDF, Word, atau gambar. Maks. 10 file, 10 MB per file. Hanya dapat dilihat tim admin.</div>
+        <input type="file" multiple accept=".pdf,.doc,.docx,image/*" onChange={pilihBerkas} />
+        {berkas.map((b, i) => (
+          <div className="m" key={i}>📄 {b.name} <button type="button" className="sec" onClick={() => setBerkas((c) => c.filter((_, k) => k !== i))}>hapus</button></div>
+        ))}
 
         <h2 style={{ marginTop: 22 }}>Titik Lokasi (Google Maps)</h2>
         <div className="f">
