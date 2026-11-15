@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Kalender from '@/components/Kalender'
 import PetaSemua from '@/components/PetaSemua'
 import PetaEmbed from '@/components/PetaEmbed'
-import { fmt, sum, porsiOf, kgOf } from '@/lib/util'
+import { fmt, sum, porsiOf, kgOf, iso, statusAksi, bermasalah, labelStatus, STATUS_IKON } from '@/lib/util'
 
 // Kalender + ringkasan + daftar aksi untuk bulan yang dipilih.
 // Jika onEvent diberikan (admin), klik jadwal memanggilnya; jika tidak, tampil detail.
@@ -13,11 +13,13 @@ export default function JadwalBulan({ events, onDay, onEvent }) {
   const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`
   const list = events.filter((e) => e.tanggal.startsWith(key)).sort((a, b) => a.tanggal.localeCompare(b.tanggal))
   const pick = onEvent || setSel
+  const hariIni = iso(new Date())
   const ringkas = [
     ['Total aksi', list.length],
     ['FFC', list.filter((e) => e.program === 'FFC').length],
     ['BUYD', list.filter((e) => e.program === 'BUYD').length],
-    ['Terlaksana', list.filter((e) => e.selesai).length],
+    ['Terlaksana', list.filter((e) => statusAksi(e) === 'terlaksana').length],
+    ...(onEvent ? [['Terkendala', list.filter((e) => bermasalah(e, hariIni)).length]] : []),
     ['Total porsi', fmt(porsiOf(list))],
     ['Total beras (kg)', fmt(kgOf(list))],
     ['Penerima manfaat', fmt(sum(list, 'jumlah_pm'))],
@@ -70,7 +72,7 @@ export default function JadwalBulan({ events, onDay, onEvent }) {
               <td>{e.kota}</td><td>{e.lokasi}</td>
               <td>{e.jumlah_bantuan ? `${e.jumlah_bantuan} ${e.satuan || ''}` : '-'}</td>
               <td>{e.jumlah_pm ?? '-'}</td>
-              <td>{e.selesai ? '✅ Terlaksana' : '🗓 Terjadwal'}</td>
+              <td>{STATUS_IKON[statusAksi(e)]} {labelStatus(e, hariIni)}{e.kendala_alasan && <div className="m" style={{ whiteSpace: 'normal', maxWidth: 260 }}>{e.kendala_alasan}</div>}</td>
             </tr>))}
           </tbody></table></div>
       )}

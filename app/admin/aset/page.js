@@ -86,6 +86,7 @@ export default function AsetPage() {
           </select>
           <button className="sec" onClick={reset}>Reset</button>
           <TombolUnduh label="⬇ Excel (sesuai filter)" onRun={() => excelAset(list)} />
+          <TombolUnduh label="⬇ Excel semua aset" onRun={() => excelAset(rows)} />
         </div>
         <div className="m">Menampilkan {list.length} dari {rows.length} aset. Klik judul kolom untuk mengurutkan.</div>
         {tampil === 'peta' ? (

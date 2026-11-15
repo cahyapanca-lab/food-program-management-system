@@ -2,6 +2,7 @@
 import { iso } from '@/lib/util'
 
 const HARI = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+const warnEv = (e) => ['terlambat', 'ditunda', 'dibatalkan', 'bermasalah'].includes(e.status_aksi)
 
 // kalender bulanan ala Notion. month = Date tanggal 1 pada bulan yang tampil
 export default function Kalender({ events = [], month, onMonth, onDay, onEvent }) {
@@ -34,9 +35,9 @@ export default function Kalender({ events = [], month, onMonth, onDay, onEvent }
               onClick={() => onDay && onDay(k)}>
               <div className="dn">{d.getDate()}</div>
               {(by[k] || []).map((e) => (
-                <div key={e.id} className={`ev ${e.program}${e.selesai ? ' done' : ''}`} title={e.lokasi}
+                <div key={e.id} className={`ev ${e.program}${e.selesai ? ' done' : ''}${warnEv(e) ? ' warn' : ''}`} title={e.lokasi}
                   onClick={(ev) => { ev.stopPropagation(); onEvent && onEvent(e) }}>
-                  {e.lokasi}
+                  {warnEv(e) ? '⚠ ' : ''}{e.lokasi}
                 </div>
               ))}
             </div>

@@ -32,3 +32,11 @@ Halaman:
 - Admin > Laporan: unduh rekap aksi mingguan atau bulanan sebagai PowerPoint yang bisa diedit (dengan grafik bawaan PowerPoint) dan Excel.
 - Pustaka Excel/Word/ZIP/PPT dimuat dari CDN jsDelivr saat tombol ditekan, jadi perangkat admin perlu terhubung ke internet.
 - Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_v3.sql` sekali.
+
+## Kendala, relawan, dan tangga juara
+- Jadwal Aksi punya status pelaksanaan (Terjadwal, Terlaksana, Terlambat, Ditunda, Dibatalkan, Bermasalah), kategori kendala, dan alasan.
+  Aksi yang sudah lewat tanggal tapi belum dilaporkan juga otomatis dianggap terkendala di rekap. Tampil di slide "Kendala & Bottleneck" PPT.
+- Nama relawan diisi per aksi. Jumlah relawan tampil di PPT; menu Relawan berisi rekap dan alat merapikan ejaan nama.
+- Tangga juara di dashboard dihitung per bulan dari aksi berstatus Terlaksana. Rekap bulanan PPT memuat slide apresiasi dengan ucapan.
+- Excel lengkap (menu Laporan) memuat seluruh data aset, lama dan baru, dengan kolom "Sumber data".
+- Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_v4.sql` sekali.

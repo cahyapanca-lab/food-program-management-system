@@ -5,6 +5,8 @@ import { TAHUN, fmt, sum, count, iso, porsiOf, kgOf } from '@/lib/util'
 import Bars from '@/components/Bars'
 import Donut from '@/components/Donut'
 import PetaSemua from '@/components/PetaSemua'
+import TanggaJuara from '@/components/TanggaJuara'
+import { statusAksi } from '@/lib/util'
 
 export default function Dashboard() {
   const { rows: aset, error } = useTable('aset')
@@ -17,7 +19,7 @@ export default function Dashboard() {
   const menunggu = pgj.filter((p) => p.status === 'baru').length
   const hari = iso(new Date())
   const jadBulan = jad.filter((j) => j.tanggal.startsWith(hari.slice(0, 7)))
-  const mendatang = jad.filter((j) => !j.selesai && j.tanggal >= hari).slice(0, 5)
+  const mendatang = jad.filter((j) => statusAksi(j) === 'terjadwal' && j.tanggal >= hari).slice(0, 5)
   const terbaru = [...baru].sort((a, b) => b.id - a.id).slice(0, 6)
   const titik = aset.filter((a) => a.latitude != null && a.longitude != null)
 
@@ -51,6 +53,9 @@ export default function Dashboard() {
           <div className="pbar"><div style={{ width: `${persen}%` }} /></div>
         </div>
       </div>
+
+      <div className="sect"><h2>🏆 Tangga Juara Relawan</h2><Link href="/admin/relawan">Rekap relawan</Link></div>
+      <div className="card" style={{ marginTop: 8 }}><TanggaJuara jadwal={jad} /></div>
 
       <div className="sect"><h2>Peta Sebaran Aset</h2><Link href="/admin/aset">Kelola data aset</Link></div>
       <div className="card" style={{ marginTop: 8 }}>

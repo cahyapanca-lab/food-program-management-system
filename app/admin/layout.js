@@ -31,7 +31,7 @@ function Nav() {
   const path = usePathname()
   const { rows } = useTable('pengajuan', { order: 'id' })
   const baru = rows.filter((p) => p.status === 'baru').length
-  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal Aksi'], ['/admin/laporan', 'Laporan']]
+  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal Aksi'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
   return (
     <nav className="nav">
       {items.map(([href, nama]) => (

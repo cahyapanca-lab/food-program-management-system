@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import { useTable } from '@/lib/useTable'
 import { iso, fmt } from '@/lib/util'
-import { buatRekap, hitungRekap } from '@/lib/rekap'
+import { buatRekap, hitungRekap, excelRekapLengkap } from '@/lib/rekap'
 import { excelJadwal } from '@/lib/ekspor'
 import TombolUnduh from '@/components/TombolUnduh'
 
@@ -32,8 +32,10 @@ export default function LaporanPage() {
   }, [jenis, tgl, bln, thn])
 
   const st = hitungRekap({ jenis, ...periode, jadwal, aset, pengajuan })
-  const kpi = [['Total aksi', st.aksi.length], ['Terlaksana', st.terlaksana], ['FFC', st.ffc.length], ['BUYD', st.buyd.length],
-    ['Total porsi', fmt(st.porsi)], ['Total beras (kg)', fmt(st.kg)], ['Penerima manfaat', fmt(st.pm)], ['Aset baru', st.asetBaru.length]]
+  const kpi = [['Total aksi', st.aksi.length], ['Terlaksana', st.terlaksana], ['Aksi terkendala', st.kendala.length], ['Relawan terlibat', st.relawan.length],
+    ['FFC', st.ffc.length], ['BUYD', st.buyd.length], ['Total porsi', fmt(st.porsi)], ['Total beras (kg)', fmt(st.kg)], ['Penerima manfaat', fmt(st.pm)],
+    ['Aset baru (periode)', st.asetBaru.length], ['Total aset (lama + baru)', st.totalAset]]
+  const data = { jenis, ...periode, jadwal, aset, pengajuan }
 
   return (
     <>
@@ -59,10 +61,14 @@ export default function LaporanPage() {
           {kpi.map(([n, v]) => <div className="card kpi" key={n}><b>{v}</b><span>{n}</span></div>)}
         </div>
         <div className="f" style={{ marginTop: 14 }}>
-          <TombolUnduh className="" label="⬇ Unduh PPT (editable)" onRun={() => buatRekap({ jenis, ...periode, jadwal, aset, pengajuan })} />
-          <TombolUnduh label="⬇ Excel daftar aksi" onRun={() => excelJadwal(st.aksi, `Aksi_${jenis}_${periode.mulai}.xlsx`)} />
+          <TombolUnduh className="" label="⬇ Unduh PPT (editable)" onRun={() => buatRekap(data)} />
+          <TombolUnduh label="⬇ Excel lengkap (aksi + semua aset + relawan)" onRun={() => excelRekapLengkap(data)} />
+          <TombolUnduh label="⬇ Excel daftar aksi saja" onRun={() => excelJadwal(st.aksi, `Aksi_${jenis}_${periode.mulai}.xlsx`)} />
         </div>
-        <div className="m">PPT berisi: sampul, ringkasan, infografis program dan kota, tren, aset baru, dan daftar aksi. Semua teks dan grafik bisa diedit di PowerPoint.</div>
+        <div className="m">
+          PPT berisi: sampul, ringkasan, infografis program dan kota, tren, kendala &amp; bottleneck, relawan terlibat, {jenis === 'bulanan' ? 'apresiasi relawan (tangga juara), ' : ''}data aset keseluruhan (lama + baru), aset baru periode ini, dan daftar aksi.
+          Excel lengkap berisi sheet ringkasan, aksi periode, kendala, seluruh data aset (data lama dan baru, ada kolom sumber data), pengajuan, dan relawan.
+        </div>
       </div>
     </>
   )

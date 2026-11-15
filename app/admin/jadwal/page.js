@@ -6,13 +6,16 @@ import JadwalBulan from '@/components/JadwalBulan'
 import PetaEmbed from '@/components/PetaEmbed'
 import GeoTombol from '@/components/GeoTombol'
 import { parseCoords } from '@/lib/maps'
+import ChipsInput from '@/components/ChipsInput'
+import { STATUS_LABEL, STATUS_KENDALA, KATEGORI_KENDALA } from '@/lib/util'
 
-const KOSONG = { tanggal: '', program: 'FFC', kota: '', lokasi: '', sumber_dana: '', pelaksana: 'SR', jejaring: '', jumlah_bantuan: '', satuan: 'porsi', jumlah_pm: '', segmentasi: '', armada: '', pic_driver: '', keterangan: '', selesai: false, publik: true, aset_id: '', lokasi_maps: '', latitude: '', longitude: '' }
+const KOSONG = { tanggal: '', program: 'FFC', kota: '', lokasi: '', sumber_dana: '', pelaksana: 'SR', jejaring: '', jumlah_bantuan: '', satuan: 'porsi', jumlah_pm: '', segmentasi: '', armada: '', pic_driver: '', keterangan: '', selesai: false, publik: true, aset_id: '', lokasi_maps: '', latitude: '', longitude: '', status_aksi: 'terjadwal', kendala_kategori: '', kendala_alasan: '', relawan: [] }
 
 export default function JadwalPage() {
   const { rows, reload, error } = useTable('jadwal_aksi', { order: 'tanggal' })
   const { rows: aset } = useTable('aset')
   const [edit, setEdit] = useState(null)
+  const kenal = [...new Set(rows.flatMap((r) => r.relawan || []))]
   return (
     <>
       <h1>Jadwal Aksi</h1>
@@ -25,12 +28,12 @@ export default function JadwalPage() {
         </div>
         <JadwalBulan events={rows} onDay={(d) => setEdit({ ...KOSONG, tanggal: d })} onEvent={(e) => setEdit({ ...KOSONG, ...e, aset_id: e.aset_id ?? '' })} />
       </div>
-      {edit && <FormJadwal j={edit} aset={aset} close={() => setEdit(null)} reload={reload} />}
+      {edit && <FormJadwal j={edit} aset={aset} kenal={kenal} close={() => setEdit(null)} reload={reload} />}
     </>
   )
 }
 
-function FormJadwal({ j, aset, close, reload }) {
+function FormJadwal({ j, aset, kenal, close, reload }) {
   const [f, setF] = useState(j)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -49,7 +52,12 @@ function FormJadwal({ j, aset, close, reload }) {
   }
   async function simpan() {
     if (!f.tanggal || !f.lokasi) return setErr('Isi tanggal dan lokasi')
+    if (STATUS_KENDALA.includes(f.status_aksi) && !(f.kendala_alasan || '').trim()) return setErr('Isi alasan / kendala untuk status ini')
     const { id, ...rest } = f
+    rest.selesai = rest.status_aksi === 'terlaksana'
+    rest.kendala_kategori = rest.kendala_kategori || null
+    rest.kendala_alasan = (rest.kendala_alasan || '').trim() || null
+    rest.relawan = rest.relawan || []
     for (const k of ['jumlah_bantuan', 'jumlah_pm', 'aset_id', 'latitude', 'longitude']) rest[k] = rest[k] === '' || rest[k] == null ? null : Number(rest[k])
     setBusy(true)
     const r = id ? await supabase.from('jadwal_aksi').update(rest).eq('id', id) : await supabase.from('jadwal_aksi').insert(rest)
@@ -76,7 +84,21 @@ function FormJadwal({ j, aset, close, reload }) {
       <label>Link Google Maps lokasi aksi<input value={f.lokasi_maps ?? ''} onChange={(e) => { const c = parseCoords(e.target.value); setF({ ...f, lokasi_maps: e.target.value, ...(c ? { latitude: c.lat, longitude: c.lng, titik_perkiraan: false } : {}) }) }} placeholder="tempel link Google Maps" /></label>
       <div className="f"><button type="button" className="sec" onClick={gps}>📍 Ambil titik lokasi saya</button>{f.titik_perkiraan && <span className="m">Titik perkiraan otomatis - periksa lalu simpan</span>}</div>
       <PetaEmbed lat={f.latitude} lng={f.longitude} q={`${f.lokasi || ''} ${f.kota || ''}`} />{inp('armada', 'Armada')}{inp('pic_driver', 'PIC / Driver')}{inp('keterangan', 'Keterangan')}
-      <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={!!f.selesai} onChange={(e) => setF({ ...f, selesai: e.target.checked })} /> Sudah terlaksana</label>
+      <label>Status pelaksanaan
+        <select value={f.status_aksi || 'terjadwal'} onChange={set('status_aksi')}>
+          {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+      </label>
+      <label>Kategori kendala / bottleneck (jika ada)
+        <select value={f.kendala_kategori || ''} onChange={set('kendala_kategori')}>
+          <option value="">-</option>{KATEGORI_KENDALA.map((k) => <option key={k}>{k}</option>)}
+        </select>
+      </label>
+      <label>Alasan / kendala {STATUS_KENDALA.includes(f.status_aksi) && <b className="err">(wajib untuk status ini)</b>}
+        <textarea rows={3} value={f.kendala_alasan ?? ''} onChange={set('kendala_alasan')} placeholder="Contoh: armada rusak sehingga distribusi mundur satu hari" />
+      </label>
+      <label>Relawan yang terlibat</label>
+      <ChipsInput value={f.relawan || []} onChange={(v) => setF({ ...f, relawan: v })} saran={kenal} />
       <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={!!f.publik} onChange={(e) => setF({ ...f, publik: e.target.checked })} /> Tampilkan di halaman relawan</label>
       {err && <div className="err">{err}</div>}
       <div className="f"><button disabled={busy} onClick={simpan}>Simpan</button><button className="sec" onClick={close}>Batal</button>{f.id && <button className="red" onClick={hapus}>Hapus</button>}</div>
