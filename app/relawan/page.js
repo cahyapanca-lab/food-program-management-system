@@ -1,24 +1,30 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { uploadFoto, uploadBerkas } from '@/lib/storage'
+import { uploadFoto, uploadDokumen, DOK_EXT } from '@/lib/storage'
 import { compressImage, mapsLink } from '@/lib/util'
 import JadwalBulan from '@/components/JadwalBulan'
+
+const MIN_FOTO = 5
+const MAX_FOTO = 10
+const MAX_DOK = 3
+const MAX_DOK_MB = 10
 
 const AWAL = {
   program: 'BUYD', nama_pengaju: '', no_telp: '', organisasi: '', alamat_pengaju: '',
   nama_pondok: '', jenis: 'Pondok pesantren', kota: '', alamat_pondok: '', jumlah_penghuni: '',
-  pimpinan: '', konsumsi_beras_kg: '', kategori: '', story: '', catatan_relawan: '', lokasi_maps: '', website: '',
+  pimpinan: '', konsumsi_beras_kg: '', kategori: '', story: '', rekomendasi: '', lokasi_maps: '', website: '',
 }
 
 export default function Relawan() {
   const [f, setF] = useState(AWAL)
-  const [fotos, setFotos] = useState([null, null, null, null, null])
-  const [berkas, setBerkas] = useState([])
+  const [fotos, setFotos] = useState(Array(MIN_FOTO).fill(null))
+  const [docs, setDocs] = useState([])
   const [loc, setLoc] = useState(null)
   const [locMsg, setLocMsg] = useState('')
   const [locBusy, setLocBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [docMsg, setDocMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [jadwal, setJadwal] = useState([])
 
@@ -29,6 +35,7 @@ export default function Relawan() {
   }, [])
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const terisi = fotos.filter(Boolean).length
 
   async function pilihFoto(i, e) {
     const file = e.target.files[0]
@@ -39,12 +46,22 @@ export default function Relawan() {
   }
   const hapusFoto = (i) => setFotos((cur) => cur.map((x, k) => (k === i ? null : x)))
 
-  function pilihBerkas(e) {
-    const ok = [], lewat = []
-    for (const b of e.target.files) (b.size <= 10 * 1024 * 1024 ? ok : lewat).push(b)
+  function pilihDokumen(e) {
+    const baru = [...e.target.files]
     e.target.value = ''
-    setBerkas((cur) => [...cur, ...ok].slice(0, 10))
-    setMsg(lewat.length ? `${lewat.length} file dilewati (lebih dari 10 MB): ${lewat.map((b) => b.name).join(', ')}` : '')
+    setDocMsg('')
+    const ok = []
+    for (const file of baru) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase()
+      if (!DOK_EXT.includes(ext)) { setDocMsg(`"${file.name}" dilewati: gunakan PDF, Word, atau gambar.`); continue }
+      if (file.size > MAX_DOK_MB * 1024 * 1024) { setDocMsg(`"${file.name}" dilewati: maksimal ${MAX_DOK_MB} MB per berkas.`); continue }
+      ok.push(file)
+    }
+    setDocs((cur) => {
+      const gabung = [...cur, ...ok]
+      if (gabung.length > MAX_DOK) setDocMsg(`Maksimal ${MAX_DOK} berkas.`)
+      return gabung.slice(0, MAX_DOK)
+    })
   }
 
   function ambilLokasi() {
@@ -61,22 +78,27 @@ export default function Relawan() {
   async function kirim(e) {
     e.preventDefault()
     setMsg('')
-    const terpilih = fotos.filter(Boolean)
-    if (terpilih.length < 5) return setMsg(`Tambahkan minimal 5 foto dokumentasi (baru ${terpilih.length}).`)
+    if (terisi < MIN_FOTO) return setMsg(`Foto dokumentasi minimal ${MIN_FOTO} (baru ${terisi}).`)
     if (!loc && !f.lokasi_maps.trim()) return setMsg('Ambil titik lokasi atau tempel link Google Maps.')
     setBusy(true)
     try {
       const urls = []
-      for (const x of terpilih) urls.push(await uploadFoto('pengajuan', x.file))
-      const paths = []
-      for (const b of berkas) paths.push(await uploadBerkas('pengajuan', b))
+      for (const x of fotos.filter(Boolean)) urls.push(await uploadFoto('pengajuan', x.file))
+      const dokumen = []
+      for (const file of docs) {
+        const isi = file.type.startsWith('image/') ? await compressImage(file) : file
+        const ext = file.type.startsWith('image/') ? 'jpg' : file.name.split('.').pop()
+        const dok = await uploadDokumen(new File([isi], `${file.name.replace(/\.[^.]+$/, '')}.${ext}`, { type: isi.type }))
+        dokumen.push({ nama: file.name.slice(0, 120), path: dok.path })
+      }
       const num = (v) => (v === '' ? null : Number(v))
       const row = {
         ...f,
         jumlah_penghuni: num(f.jumlah_penghuni),
         konsumsi_beras_kg: num(f.konsumsi_beras_kg),
+        rekomendasi: f.rekomendasi.trim() || null,
         foto_urls: urls,
-        file_santri: paths,
+        dokumen_santri: dokumen,
         latitude: loc ? loc.lat : null,
         longitude: loc ? loc.lng : null,
         lokasi_maps: f.lokasi_maps.trim() || (loc ? mapsLink(loc.lat, loc.lng) : null),
@@ -86,9 +108,9 @@ export default function Relawan() {
 
       const hook = process.env.NEXT_PUBLIC_SHEETS_WEBHOOK
       if (hook) {
-        fetch(hook, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...row, foto_urls: urls.join('\n') }) }).catch(() => {})
+        fetch(hook, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...row, foto_urls: urls.join('\n'), dokumen_santri: dokumen.map((d) => d.nama).join('\n') }) }).catch(() => {})
       }
-      setMsg('ok'); setF(AWAL); setFotos([null, null, null, null, null]); setBerkas([]); setLoc(null)
+      setMsg('ok'); setF(AWAL); setFotos(Array(MIN_FOTO).fill(null)); setDocs([]); setLoc(null)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setMsg('Gagal mengirim: ' + (err.message || 'coba lagi'))
@@ -129,9 +151,12 @@ export default function Relawan() {
         <label>Konsumsi beras (kg / hari)<input type="number" min="0" step="0.1" value={f.konsumsi_beras_kg} onChange={set('konsumsi_beras_kg')} /></label>
         <label>Kategori santri<input value={f.kategori} onChange={set('kategori')} maxLength={200} placeholder="contoh: 80% dhuafa, hampir semua gratis" /></label>
         <label>Kenapa harus dibantu? (story / biografi)<textarea rows={6} value={f.story} onChange={set('story')} maxLength={3000} /></label>
+        <label>Keterangan tambahan <span className="m">(opsional)</span>
+          <textarea rows={3} value={f.rekomendasi} onChange={set('rekomendasi')} maxLength={2000} placeholder="Contoh: rekomendasi program Ramadhan, kebutuhan khusus, atau catatan lain" />
+        </label>
 
-        <h2 style={{ marginTop: 22 }}>Foto Dokumentasi (minimal 5, maks. 10)</h2>
-        <div className="m">Di HP, tombol “Kamera” langsung membuka kamera. Minimal 5 foto.</div>
+        <h2 style={{ marginTop: 22 }}>Foto Dokumentasi (minimal {MIN_FOTO})</h2>
+        <div className="m">Di HP, tombol “Kamera” langsung membuka kamera. Terisi: <b style={{ color: terisi >= MIN_FOTO ? 'var(--a)' : 'var(--r)' }}>{terisi} / {MIN_FOTO}</b></div>
         <div className="thumbs" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))' }}>
           {fotos.map((x, i) => (
             <div className="slot" key={i}>
@@ -142,18 +167,18 @@ export default function Relawan() {
             </div>
           ))}
         </div>
+        {fotos.length < MAX_FOTO && (
+          <div className="f"><button type="button" className="sec" onClick={() => setFotos((c) => [...c, null])}>+ Tambah foto lain (maks. {MAX_FOTO})</button></div>
+        )}
 
-        {fotos.length < 10 && <div className="f"><button type="button" className="sec" onClick={() => setFotos((c) => [...c, null])}>+ Tambah slot foto</button></div>}
-
-        <h2 style={{ marginTop: 22 }}>Keterangan Tambahan (opsional)</h2>
-        <label>Rekomendasi Ramadhan atau catatan lain<textarea rows={4} value={f.catatan_relawan} onChange={set('catatan_relawan')} maxLength={1500} /></label>
-
-        <h2 style={{ marginTop: 22 }}>Data Santri (opsional)</h2>
-        <div className="m">Unggah PDF, Word, atau gambar. Maks. 10 file, 10 MB per file. Hanya dapat dilihat tim admin.</div>
-        <input type="file" multiple accept=".pdf,.doc,.docx,image/*" onChange={pilihBerkas} />
-        {berkas.map((b, i) => (
-          <div className="m" key={i}>📄 {b.name} <button type="button" className="sec" onClick={() => setBerkas((c) => c.filter((_, k) => k !== i))}>hapus</button></div>
+        <h2 style={{ marginTop: 22 }}>Data Santri <span className="m">(opsional)</span></h2>
+        <div className="m">Unggah daftar / data santri dalam format PDF, Word, atau gambar (maks. {MAX_DOK} berkas, {MAX_DOK_MB} MB per berkas). Berkas disimpan privat dan hanya bisa dibuka admin Program Pangan.</div>
+        <div className="f"><input type="file" accept=".pdf,.doc,.docx,image/*" multiple onChange={pilihDokumen} disabled={docs.length >= MAX_DOK} /></div>
+        {docs.map((d, i) => (
+          <div className="row" key={`${d.name}-${i}`}>📄 {d.name} <span className="m">({(d.size / 1024 / 1024).toFixed(1)} MB)</span>
+            <button type="button" className="sec" onClick={() => setDocs((c) => c.filter((_, k) => k !== i))}>Hapus</button></div>
         ))}
+        {docMsg && <div className="err">{docMsg}</div>}
 
         <h2 style={{ marginTop: 22 }}>Titik Lokasi (Google Maps)</h2>
         <div className="f">

@@ -8,6 +8,9 @@ import { openUrl, parseCoords } from '@/lib/maps'
 import PetaSemua from '@/components/PetaSemua'
 import PetaEmbed from '@/components/PetaEmbed'
 import GeoTombol from '@/components/GeoTombol'
+import TombolUnduh from '@/components/TombolUnduh'
+import DokumenList from '@/components/DokumenList'
+import { excelAset, profilAset, unduhDocx, unduhPaket } from '@/lib/ekspor'
 
 function petaLink(a) {
   if (a.latitude != null && a.longitude != null) return openUrl({ lat: a.latitude, lng: a.longitude })
@@ -82,6 +85,7 @@ export default function AsetPage() {
             {!SORTS.some(([v]) => v === sort) && <option value={sort}>Urutan kolom: {key} {dir === 'asc' ? '↑' : '↓'}</option>}
           </select>
           <button className="sec" onClick={reset}>Reset</button>
+          <TombolUnduh label="⬇ Excel (sesuai filter)" onRun={() => excelAset(list)} />
         </div>
         <div className="m">Menampilkan {list.length} dari {rows.length} aset. Klik judul kolom untuk mengurutkan.</div>
         {tampil === 'peta' ? (
@@ -153,7 +157,7 @@ function EditAset({ a, close, reload }) {
     if (!f.nama?.trim()) return setErr('Nama aset wajib diisi')
     const { id, dibuat_pada, ...rest } = f
     for (const k of ['jumlah_pm', 'kg_beras_per_hari', 'tahun_aset', 'latitude', 'longitude']) rest[k] = rest[k] === '' || rest[k] == null ? null : Number(rest[k])
-    for (const k of ['program', 'status', 'implementasi_terakhir', 'kota', 'cluster', 'pic', 'no_hp', 'lokasi_maps', 'story', 'keterangan', 'alamat', 'pimpinan']) if (!rest[k]) rest[k] = null
+    for (const k of ['program', 'status', 'implementasi_terakhir', 'kota', 'cluster', 'pic', 'no_hp', 'lokasi_maps', 'story', 'keterangan', 'alamat', 'pimpinan', 'rekomendasi']) if (!rest[k]) rest[k] = null
     setBusy(true)
     const r = id ? await supabase.from('aset').update(rest).eq('id', id) : await supabase.from('aset').insert(rest)
     setBusy(false)
@@ -179,7 +183,9 @@ function EditAset({ a, close, reload }) {
       <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={!!f.sudah_implementasi} onChange={(e) => setF({ ...f, sudah_implementasi: e.target.checked })} /> Sudah terimplementasi</label>
       {inp('implementasi_terakhir', 'Implementasi terakhir', 'date')}
       <label>Story aset<textarea rows={5} value={f.story ?? ''} onChange={set('story')} /></label>
+      <label>Rekomendasi / keterangan tambahan (mis. program Ramadhan)<textarea rows={3} value={f.rekomendasi ?? ''} onChange={set('rekomendasi')} /></label>
       <label>Keterangan<textarea rows={2} value={f.keterangan ?? ''} onChange={set('keterangan')} /></label>
+      {(f.dokumen_santri || []).length > 0 && (<><label>Dokumen data santri (privat, hanya admin)</label><DokumenList dokumen={f.dokumen_santri} /></>)}
       <label>Foto (maks. 5)</label>
       <div className="thumbs">
         {f.foto_urls.map((u, i) => (
@@ -189,6 +195,12 @@ function EditAset({ a, close, reload }) {
       {f.foto_urls.length < 5 && <input type="file" accept="image/*" multiple onChange={tambahFoto} disabled={busy} style={{ marginTop: 8 }} />}
       {err && <div className="err" style={{ marginTop: 8 }}>{err}</div>}
       <div className="f"><button disabled={busy} onClick={simpan}>{busy ? 'Memproses…' : 'Simpan'}</button><button className="sec" disabled={busy} onClick={close}>Batal</button></div>
+      {f.id && (
+        <div className="f">
+          <TombolUnduh label="⬇ Profil (Word)" onRun={() => unduhDocx(profilAset(f))} />
+          <TombolUnduh label="⬇ Paket ZIP (untuk Google Drive)" onRun={() => unduhPaket(profilAset(f))} />
+        </div>
+      )}
     </div></div>
   )
 }

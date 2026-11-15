@@ -26,8 +26,9 @@ Halaman:
   tombol "Lengkapi titik lokasi otomatis" (OpenStreetMap Nominatim, perkiraan, sekitar 1 permintaan per detik).
 - Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_peta.sql` sekali.
 
-## Fitur tambahan (v2.1)
-- Jalankan `migrasi_fitur_baru.sql` sekali di Supabase SQL Editor (kolom keterangan + berkas santri, bucket privat `data-santri`).
-- Lalu unggah kode ke GitHub; Vercel akan menjalankan `npm install` otomatis (ada paket baru: exceljs, jszip, pptxgenjs).
-- `/relawan`: keterangan opsional, minimal 5 foto (maks. 10), upload data santri (PDF/Word/gambar, privat).
-- `/admin/unduhan`: unduh Excel, ZIP foto + data santri per pondok, dan rekap aksi mingguan/bulanan dalam PPT.
+## Fitur unduhan dan rekap
+- Form relawan: keterangan opsional (rekomendasi Ramadhan dll), minimal 5 foto (maks. 10), dan data santri (PDF/Word/gambar, privat).
+- Admin > Data Aset dan Pengajuan: unduh Excel, profil Word, atau paket ZIP (Word + foto + dokumen santri) untuk diunggah manual ke Google Drive.
+- Admin > Laporan: unduh rekap aksi mingguan atau bulanan sebagai PowerPoint yang bisa diedit (dengan grafik bawaan PowerPoint) dan Excel.
+- Pustaka Excel/Word/ZIP/PPT dimuat dari CDN jsDelivr saat tombol ditekan, jadi perangkat admin perlu terhubung ke internet.
+- Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_v3.sql` sekali.

@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useTable } from '@/lib/useTable'
 import { waLink } from '@/lib/util'
+import TombolUnduh from '@/components/TombolUnduh'
+import DokumenList from '@/components/DokumenList'
+import { excelPengajuan, profilPengajuan, unduhDocx, unduhPaket } from '@/lib/ekspor'
 
 export default function PengajuanPage() {
   const { rows, reload, error } = useTable('pengajuan', { order: 'id', asc: false })
@@ -32,6 +35,7 @@ export default function PengajuanPage() {
           <option value="baru">Menunggu</option><option value="disetujui">Disetujui</option><option value="ditolak">Ditolak</option><option value="">Semua</option>
         </select>
         <span className="m">{list.length} pengajuan</span>
+        <TombolUnduh label="⬇ Excel (sesuai filter)" onRun={() => excelPengajuan(list)} />
       </div>
       {msg === 'ok' && <div className="ok">Pengajuan disetujui dan masuk ke <Link href="/admin/aset">Data Aset</Link>.</div>}
       {msg && msg !== 'ok' && <div className="err">{msg}</div>}
@@ -48,14 +52,18 @@ export default function PengajuanPage() {
               Penghuni: {p.jumlah_penghuni ?? '-'} - Beras: {p.konsumsi_beras_kg ?? '-'} kg/hari - Pimpinan: {p.pimpinan || '-'} - Kategori: {p.kategori || '-'}
             </div>
             {p.story && <p>{p.story}</p>}
+            {p.rekomendasi && <p><b>Keterangan / rekomendasi:</b> {p.rekomendasi}</p>}
             {p.foto_urls?.length > 0 && (
               <div className="thumbs">{p.foto_urls.map((u) => <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="dokumentasi" /></a>)}</div>)}
+            {p.dokumen_santri?.length > 0 && (<><div className="m" style={{ marginTop: 8 }}>Dokumen data santri (privat):</div><DokumenList dokumen={p.dokumen_santri} /></>)}
             <div className="m" style={{ marginTop: 8 }}>
               Pengaju: {p.nama_pengaju} ({p.organisasi || '-'}) - {p.alamat_pengaju || ''}
             </div>
             <div className="f">
               {peta && <a href={peta} target="_blank" rel="noreferrer"><button type="button" className="sec">📍 Buka Google Maps</button></a>}
               {wa && <a href={wa} target="_blank" rel="noreferrer"><button type="button" className="sec">💬 WhatsApp pengaju</button></a>}
+              <TombolUnduh label="⬇ Word" onRun={() => unduhDocx(profilPengajuan(p))} />
+              <TombolUnduh label="⬇ Paket ZIP" onRun={() => unduhPaket(profilPengajuan(p))} />
               {p.status === 'baru' && (<><button onClick={() => setujui(p.id)}>Setujui</button><button className="red" onClick={() => tolak(p.id)}>Tolak</button></>)}
             </div>
           </div>)

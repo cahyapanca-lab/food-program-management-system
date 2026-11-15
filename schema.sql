@@ -18,7 +18,8 @@ create table aset (
   status text check (status in ('terbaru','perlu_update')),
   lokasi_maps text, latitude double precision, longitude double precision,
   titik_perkiraan boolean not null default false,
-  story text, keterangan text,
+  story text, keterangan text, rekomendasi text,
+  dokumen_santri jsonb not null default '[]'::jsonb,
   foto_urls text[] not null default '{}',
   sudah_implementasi boolean not null default false,
   implementasi_terakhir date,
@@ -43,7 +44,9 @@ create table pengajuan (
   konsumsi_beras_kg numeric check (konsumsi_beras_kg between 0 and 10000),
   kategori text check (char_length(kategori) <= 200),
   story text check (char_length(story) <= 3000),
-  foto_urls text[] not null default '{}' check (coalesce(array_length(foto_urls,1),0) <= 5),
+  rekomendasi text constraint pengajuan_rekomendasi_check check (char_length(rekomendasi) <= 2000),
+  dokumen_santri jsonb not null default '[]'::jsonb constraint pengajuan_dokumen_check check (jsonb_typeof(dokumen_santri) = 'array' and jsonb_array_length(dokumen_santri) <= 3),
+  foto_urls text[] not null default '{}' constraint pengajuan_foto_urls_check check (coalesce(array_length(foto_urls,1),0) between 5 and 10),
   latitude double precision check (latitude between -90 and 90),
   longitude double precision check (longitude between -180 and 180),
   lokasi_maps text check (char_length(lokasi_maps) <= 500),
@@ -98,10 +101,10 @@ begin
   if not found then raise exception 'pengajuan tidak ditemukan atau sudah diproses'; end if;
   insert into aset (kota, cluster, nama, alamat, pimpinan, jumlah_pm, kg_beras_per_hari, pic, no_hp,
                     program, tahun_aset, status, lokasi_maps, latitude, longitude, story, keterangan,
-                    foto_urls, dari_pengajuan)
+                    foto_urls, rekomendasi, dokumen_santri, dari_pengajuan)
   values (p.kota, p.jenis, p.nama_pondok, p.alamat_pondok, p.pimpinan, p.jumlah_penghuni, p.konsumsi_beras_kg,
           p.nama_pengaju, p.no_telp, p.program, extract(year from now())::int, 'terbaru',
-          p.lokasi_maps, p.latitude, p.longitude, p.story, p.kategori, p.foto_urls, true)
+          p.lokasi_maps, p.latitude, p.longitude, p.story, p.kategori, p.foto_urls, p.rekomendasi, p.dokumen_santri, true)
   returning id into new_id;
   update pengajuan set status = 'disetujui', aset_id = new_id where id = p_id;
   return new_id;
@@ -121,6 +124,16 @@ create policy foto_unggah_relawan on storage.objects for insert to anon
   with check (bucket_id = 'dokumentasi' and name like 'pengajuan/%');
 create policy foto_admin on storage.objects for all to authenticated
   using (bucket_id = 'dokumentasi') with check (bucket_id = 'dokumentasi');
+
+-- 7b. DOKUMEN DATA SANTRI: bucket PRIVAT (hanya admin yang bisa membuka), maks 10 MB, PDF / Word / gambar
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('dokumen_santri', 'dokumen_santri', false, 10485760, array['application/pdf','application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document','image/jpeg','image/png','image/webp'])
+on conflict (id) do nothing;
+create policy dokumen_unggah_relawan on storage.objects for insert to anon
+  with check (bucket_id = 'dokumen_santri' and name like 'pengajuan/%');
+create policy dokumen_admin on storage.objects for all to authenticated
+  using (bucket_id = 'dokumen_santri') with check (bucket_id = 'dokumen_santri');
 
 -- 8. SETELAH IMPOR CSV ASET, jalankan sekali agar aset impor tidak dihitung "baru" di laporan:
 --   update aset set dibuat_pada = '2025-01-01';
