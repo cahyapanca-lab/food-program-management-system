@@ -1,9 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { uploadFoto, uploadDokumen, DOK_EXT } from '@/lib/storage'
 import { compressImage, mapsLink } from '@/lib/util'
-import JadwalBulan from '@/components/JadwalBulan'
+import JadwalPublik from '@/components/JadwalPublik'
 
 const MIN_FOTO = 5
 const MAX_FOTO = 10
@@ -26,13 +26,6 @@ export default function Relawan() {
   const [msg, setMsg] = useState('')
   const [docMsg, setDocMsg] = useState('')
   const [busy, setBusy] = useState(false)
-  const [jadwal, setJadwal] = useState([])
-
-  useEffect(() => {
-    supabase.from('jadwal_aksi')
-      .select('id,tanggal,program,kota,lokasi,jumlah_bantuan,satuan,jumlah_pm,segmentasi,selesai,latitude,longitude')
-      .order('tanggal').then(({ data }) => setJadwal(data || []))
-  }, [])
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const terisi = fotos.filter(Boolean).length
@@ -200,7 +193,7 @@ export default function Relawan() {
 
       <div className="card">
         <h2>Jadwal Aksi</h2>
-        <JadwalBulan events={jadwal} />
+        <JadwalPublik />
       </div>
     </div>
   )

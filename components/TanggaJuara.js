@@ -12,8 +12,10 @@ export default function TanggaJuara({ jadwal }) {
   const key = `${bulan.getFullYear()}-${String(bulan.getMonth() + 1).padStart(2, '0')}`
   const label = namaBulan(bulan)
   const rank = useMemo(() => rekapRelawan(jadwal, key, true), [jadwal, key])
-  const podium = rank.slice(0, 3)
-  const urut = podium.length === 3 ? [podium[1], podium[0], podium[2]] : podium.length === 2 ? [podium[1], podium[0]] : podium
+  // semua relawan berperingkat 1-3 (bisa lebih dari 3 orang bila seri); tinggi dan warna mengikuti peringkat
+  const podium = rank.filter((r) => r.rank <= 3)
+  const beda = podium.length === 3 && new Set(podium.map((r) => r.rank)).size === 3
+  const urut = beda ? [podium[1], podium[0], podium[2]] : podium
   const pemenang = rank.filter((r) => r.rank <= 3)
   const geser = (n) => setBulan(new Date(bulan.getFullYear(), bulan.getMonth() + n, 1))
 
@@ -32,7 +34,7 @@ export default function TanggaJuara({ jadwal }) {
         <>
           <div className="podium">
             {urut.map((r) => {
-              const i = podium.indexOf(r)
+              const i = Math.min(r.rank, 3) - 1
               return (
                 <div className="step" key={r.key}>
                   <div className="who">{MEDALI[i]} {r.nama}</div>

@@ -7,6 +7,8 @@ import PetaEmbed from '@/components/PetaEmbed'
 import GeoTombol from '@/components/GeoTombol'
 import { parseCoords } from '@/lib/maps'
 import ChipsInput from '@/components/ChipsInput'
+import TugasForm from '@/components/TugasForm'
+import { STATUS_TUGAS } from '@/lib/tugas'
 import { STATUS_LABEL, STATUS_KENDALA, KATEGORI_KENDALA } from '@/lib/util'
 
 const KOSONG = { tanggal: '', program: 'FFC', kota: '', lokasi: '', sumber_dana: '', pelaksana: 'SR', jejaring: '', jumlah_bantuan: '', satuan: 'porsi', jumlah_pm: '', segmentasi: '', armada: '', pic_driver: '', keterangan: '', selesai: false, publik: true, aset_id: '', lokasi_maps: '', latitude: '', longitude: '', status_aksi: 'terjadwal', kendala_kategori: '', kendala_alasan: '', relawan: [] }
@@ -14,26 +16,38 @@ const KOSONG = { tanggal: '', program: 'FFC', kota: '', lokasi: '', sumber_dana:
 export default function JadwalPage() {
   const { rows, reload, error } = useTable('jadwal_aksi', { order: 'tanggal' })
   const { rows: aset } = useTable('aset')
+  const { rows: tugas, reload: reloadTugas } = useTable('tugas')
   const [edit, setEdit] = useState(null)
+  const [editTugas, setEditTugas] = useState(null)
   const kenal = [...new Set(rows.flatMap((r) => r.relawan || []))]
+  const pj = [...new Set(tugas.map((t) => t.penanggung_jawab).filter(Boolean))]
+  // to-do bertanda "tampilkan di jadwal" muncul di kalender sebagai item tambahan (tidak masuk hitungan aksi)
+  const extra = tugas.filter((t) => t.tampil_di_jadwal && t.tenggat).map((t) => ({ id: `t${t.id}`, tipe: 'tugas', tanggal: t.tenggat, program: 'TUGAS', lokasi: `☑ ${t.judul}`, selesai: t.status === 'selesai', _t: t }))
   return (
     <>
       <h1>Jadwal Aksi</h1>
-      <div className="m">Klik tanggal kosong untuk menambah aksi, klik jadwal untuk mengubah atau menandai terlaksana.</div>
+      <div className="m">Klik tanggal kosong untuk menambah aksi, klik jadwal untuk mengubah atau menandai terlaksana. Item ☑ biru adalah to-do yang ditampilkan di jadwal.</div>
       {error && <div className="err">{error}</div>}
       <div className="card">
         <div className="f" style={{ marginTop: 0 }}>
           <button onClick={() => setEdit({ ...KOSONG })}>+ Tambah jadwal</button>
+          <button className="sec" onClick={() => setEditTugas({ tampil_di_jadwal: true })}>+ To-do</button>
           <GeoTombol table="jadwal_aksi" rows={rows} query={(j) => `${j.lokasi}, ${j.kota || ''}, Indonesia`} onDone={reload} />
         </div>
-        <JadwalBulan events={rows} onDay={(d) => setEdit({ ...KOSONG, tanggal: d })} onEvent={(e) => setEdit({ ...KOSONG, ...e, aset_id: e.aset_id ?? '' })} />
+        <JadwalBulan events={rows} extra={extra} onDay={(d) => setEdit({ ...KOSONG, tanggal: d })}
+          onEvent={(e) => (e.tipe === 'tugas' ? setEditTugas(e._t) : setEdit({ ...KOSONG, ...e, aset_id: e.aset_id ?? '' }))} />
       </div>
-      {edit && <FormJadwal j={edit} aset={aset} kenal={kenal} close={() => setEdit(null)} reload={reload} />}
+      {edit && (
+        <FormJadwal j={edit} aset={aset} kenal={kenal} close={() => setEdit(null)} reload={reload}
+          tugasTerkait={edit.id ? tugas.filter((t) => t.jadwal_id === edit.id) : []}
+          onTambahTugas={(j) => { setEdit(null); setEditTugas({ jadwal_id: j.id, tenggat: j.tanggal, tampil_di_jadwal: true, judul: `Tindak lanjut: ${j.lokasi}` }) }} />
+      )}
+      {editTugas && <TugasForm t={editTugas} aset={aset} jadwal={rows} pj={pj} close={() => setEditTugas(null)} reload={reloadTugas} />}
     </>
   )
 }
 
-function FormJadwal({ j, aset, kenal, close, reload }) {
+function FormJadwal({ j, aset, kenal, close, reload, tugasTerkait = [], onTambahTugas }) {
   const [f, setF] = useState(j)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -99,6 +113,13 @@ function FormJadwal({ j, aset, kenal, close, reload }) {
       </label>
       <label>Relawan yang terlibat</label>
       <ChipsInput value={f.relawan || []} onChange={(v) => setF({ ...f, relawan: v })} saran={kenal} />
+      {f.id && (
+        <>
+          <label>To-do terkait aksi ini ({tugasTerkait.length})</label>
+          {tugasTerkait.map((t) => <div className="row" key={t.id}>☑ {t.judul} <span className="m">- {STATUS_TUGAS[t.status]}{t.tenggat ? `, tenggat ${t.tenggat}` : ''}</span></div>)}
+          <div className="f" style={{ margin: '4px 0' }}><button type="button" className="sec" onClick={() => onTambahTugas(f)}>+ Tambah to-do untuk aksi ini</button></div>
+        </>
+      )}
       <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={!!f.publik} onChange={(e) => setF({ ...f, publik: e.target.checked })} /> Tampilkan di halaman relawan</label>
       {err && <div className="err">{err}</div>}
       <div className="f"><button disabled={busy} onClick={simpan}>Simpan</button><button className="sec" onClick={close}>Batal</button>{f.id && <button className="red" onClick={hapus}>Hapus</button>}</div>

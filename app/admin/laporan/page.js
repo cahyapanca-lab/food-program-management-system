@@ -13,6 +13,7 @@ export default function LaporanPage() {
   const { rows: jadwal, error } = useTable('jadwal_aksi', { order: 'tanggal' })
   const { rows: aset } = useTable('aset')
   const { rows: pengajuan } = useTable('pengajuan')
+  const { rows: tugas } = useTable('tugas')
   const now = new Date()
   const [jenis, setJenis] = useState('mingguan')
   const [tgl, setTgl] = useState(iso(now))
@@ -31,11 +32,12 @@ export default function LaporanPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jenis, tgl, bln, thn])
 
-  const st = hitungRekap({ jenis, ...periode, jadwal, aset, pengajuan })
+  const st = hitungRekap({ jenis, ...periode, jadwal, aset, pengajuan, tugas })
   const kpi = [['Total aksi', st.aksi.length], ['Terlaksana', st.terlaksana], ['Aksi terkendala', st.kendala.length], ['Relawan terlibat', st.relawan.length],
     ['FFC', st.ffc.length], ['BUYD', st.buyd.length], ['Total porsi', fmt(st.porsi)], ['Total beras (kg)', fmt(st.kg)], ['Penerima manfaat', fmt(st.pm)],
-    ['Aset baru (periode)', st.asetBaru.length], ['Total aset (lama + baru)', st.totalAset]]
-  const data = { jenis, ...periode, jadwal, aset, pengajuan }
+    ['Aset baru (periode)', st.asetBaru.length], ['Total aset (lama + baru)', st.totalAset],
+    ['To-do selesai (periode)', st.tugasStat.selesai], ['To-do terlambat', st.tugasStat.terlambat]]
+  const data = { jenis, ...periode, jadwal, aset, pengajuan, tugas }
 
   return (
     <>
@@ -66,8 +68,8 @@ export default function LaporanPage() {
           <TombolUnduh label="⬇ Excel daftar aksi saja" onRun={() => excelJadwal(st.aksi, `Aksi_${jenis}_${periode.mulai}.xlsx`)} />
         </div>
         <div className="m">
-          PPT berisi: sampul, ringkasan, infografis program dan kota, tren, kendala &amp; bottleneck, relawan terlibat, {jenis === 'bulanan' ? 'apresiasi relawan (tangga juara), ' : ''}data aset keseluruhan (lama + baru), aset baru periode ini, dan daftar aksi.
-          Excel lengkap berisi sheet ringkasan, aksi periode, kendala, seluruh data aset (data lama dan baru, ada kolom sumber data), pengajuan, dan relawan.
+          PPT berisi: sampul, ringkasan, infografis program dan kota, tren, kendala &amp; bottleneck, relawan terlibat, to-do &amp; tindak lanjut, {jenis === 'bulanan' ? 'apresiasi relawan (tangga juara), ' : ''}data aset keseluruhan (lama + baru), aset baru periode ini, dan daftar aksi.
+          Excel lengkap berisi sheet ringkasan, aksi periode, kendala, seluruh data aset (data lama dan baru, ada kolom sumber data), pengajuan, relawan, dan to-do.
         </div>
       </div>
     </>

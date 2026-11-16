@@ -1,30 +1,20 @@
-'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import JadwalBulan from '@/components/JadwalBulan'
+import StatistikPublik from '@/components/StatistikPublik'
+import JadwalPublik from '@/components/JadwalPublik'
 
 export default function Home() {
-  const [jadwal, setJadwal] = useState([])
-
-  useEffect(() => {
-    supabase.from('jadwal_aksi')
-      .select('id,tanggal,program,kota,lokasi,jumlah_bantuan,satuan,jumlah_pm,segmentasi,selesai,latitude,longitude')
-      .order('tanggal').then(({ data }) => setJadwal(data || []))
-  }, [])
-
   return (
-    <div className="wrap" style={{ maxWidth: 960 }}>
+    <div className="wrap" style={{ maxWidth: 820 }}>
       <h1>Program Pangan</h1>
       <p className="m">Sekolah Relawan - BUYD (Beras Untuk Yatim Dhuafa) &amp; FFC (Free Food Car)</p>
-      <div className="aksi">
-        <Link className="tbl utama" href="/relawan">Ajukan aset baru</Link>
-        <Link className="tbl" href="/admin">Dashboard admin</Link>
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))' }}>
+        <Link className="card block" style={{ marginTop: 0 }} href="/relawan">📝 Ajukan aset baru</Link>
+        <Link className="card block" style={{ marginTop: 0 }} href="/admin">🔐 Dashboard admin</Link>
       </div>
-
+      <StatistikPublik />
       <div className="card">
         <h2>Jadwal Aksi</h2>
-        <JadwalBulan events={jadwal} />
+        <JadwalPublik />
       </div>
     </div>
   )

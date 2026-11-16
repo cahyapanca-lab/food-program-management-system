@@ -67,12 +67,30 @@ iframe.map{width:100%;height:200px;border:0;border-radius:10px;margin-top:8px}
 .pbar{height:10px;border-radius:99px;background:var(--a2);overflow:hidden;margin:8px 0 4px}.pbar>div{height:100%;background:var(--a);border-radius:99px}
 .dbadge{width:46px;flex:none;text-align:center;background:var(--a2);border-radius:10px;padding:4px 0;line-height:1.1}.dbadge b{display:block;font-size:18px}.dbadge small{font-size:11px;color:var(--m)}
 .sect{display:flex;justify-content:space-between;align-items:baseline;margin:24px 0 0}
-
-/* Tombol beranda: minimalis */
-.aksi{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 6px}
-.tbl{display:inline-flex;align-items:center;justify-content:center;padding:11px 22px;border-radius:999px;font-weight:600;text-decoration:none;border:1px solid var(--b);color:var(--t);background:transparent;transition:border-color .15s,color .15s,opacity .15s}
-.tbl:hover{border-color:var(--a);color:var(--a)}
-.tbl.utama{background:var(--a);border-color:var(--a);color:#fff}
-.tbl.utama:hover{color:#fff;opacity:.9}
-@media(prefers-color-scheme:dark){.tbl.utama,.tbl.utama:hover{color:#0b1f15}}
-@media(max-width:600px){.aksi .tbl{flex:1}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{background:var(--a2);border-radius:99px;padding:3px 6px 3px 12px;font-size:13px;display:inline-flex;gap:4px;align-items:center}
+.chip button{padding:0 7px;background:transparent;color:var(--m);border-radius:99px;font-size:15px}
+.ev.warn{outline:1.5px solid var(--r);outline-offset:-1.5px}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-top:8px}
+.podium .step{flex:1;max-width:190px;text-align:center}
+.podium .who{font-weight:700;font-size:14px;margin-bottom:6px;word-break:break-word}
+.podium .blk{border-radius:12px 12px 0 0;color:#fff;font-weight:800;font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:10px}
+.podium .blk small{font-size:12px;font-weight:600;opacity:.95}
+.kanban{display:grid;grid-template-columns:repeat(4,minmax(250px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.kcol{background:var(--a2);border-radius:14px;padding:10px;min-height:180px}
+.kcol.over{outline:2px dashed var(--a)}
+.kcol h3{display:flex;justify-content:space-between;margin:2px 4px 10px;font-size:14px}
+.kcard{background:var(--c);border:1px solid var(--b);border-radius:10px;padding:10px;margin-bottom:8px;cursor:grab;font-size:13px}
+.kcard.telat{border-color:var(--r)}
+.kcard .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;color:var(--m);font-size:12px}
+.kcard .mv{display:flex;justify-content:space-between;margin-top:8px}
+.kcard .mv button{padding:2px 10px;background:transparent;color:var(--m);border:1px solid var(--b)}
+.pri{display:inline-block;border-radius:6px;padding:0 7px;font-size:11px;font-weight:700}
+.pri.tinggi{background:#fde2e0;color:#8f1d12}.pri.sedang{background:#fff1c9;color:#7a5200}.pri.rendah{background:#d6efe0;color:#14532d}
+.ev.TUGAS{background:#e0e7ff;color:#3730a3}
+@media(prefers-color-scheme:dark){.ev.TUGAS{background:#2b2f66;color:#c7d0ff}.pri.tinggi{background:#5a1f1a;color:#ffc9c2}.pri.sedang{background:#4d3b0c;color:#ffe29a}.pri.rendah{background:#1f4a35;color:#b8ecd0}}
+.rem{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--b)}
+.rem:last-child{border-bottom:0}
+.rem .lb{flex:none;border-radius:8px;padding:2px 9px;font-size:12px;font-weight:700;background:var(--a2);color:var(--a)}
+.rem .lb.urgent{background:var(--o);color:#fff}.rem .lb.bad{background:var(--r);color:#fff}
+.notif{border:1px solid var(--b);border-left:4px solid var(--o);border-radius:12px;padding:12px;margin:10px 0;background:var(--c)}

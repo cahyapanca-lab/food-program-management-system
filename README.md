@@ -40,3 +40,11 @@ Halaman:
 - Tangga juara di dashboard dihitung per bulan dari aksi berstatus Terlaksana. Rekap bulanan PPT memuat slide apresiasi dengan ucapan.
 - Excel lengkap (menu Laporan) memuat seluruh data aset, lama dan baru, dengan kolom "Sumber data".
 - Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_v4.sql` sekali.
+
+## To-do, pengingat, dan notifikasi
+- Menu To-do: papan ala Trello (Akan dikerjakan, Sedang dikerjakan, Menunggu, Selesai). Seret kartu antar kolom; di HP pakai tombol ‹ ›.
+  To-do bisa dihubungkan ke aset dan jadwal aksi, dan bisa ditampilkan di kalender Jadwal Aksi (khusus admin). Rekap mingguan/bulanan memuat slide dan sheet To-do.
+- Dashboard admin: kartu Pengingat (to-do terlambat/jatuh tempo, aksi hari ini sampai H-3, aksi lewat jadwal yang belum dilaporkan, pengajuan menunggu).
+- Halaman awal dan halaman relawan: ringkasan angka (termasuk persentase aksi bulan ini yang terlaksana), pengingat aksi 7 hari ke depan,
+  tombol Google Kalender / .ics, dan langganan kalender `/jadwal.ics` untuk notifikasi otomatis di HP.
+- Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_v5.sql` sekali (setelah migrasi_v4.sql).

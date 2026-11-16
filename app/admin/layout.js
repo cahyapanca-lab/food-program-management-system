@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTable } from '@/lib/useTable'
+import { iso } from '@/lib/util'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -31,12 +32,14 @@ function Nav() {
   const path = usePathname()
   const { rows } = useTable('pengajuan', { order: 'id' })
   const baru = rows.filter((p) => p.status === 'baru').length
-  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal Aksi'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
+  const { rows: tugas } = useTable('tugas', { order: 'id' })
+  const telat = tugas.filter((t) => t.status !== 'selesai' && t.tenggat && t.tenggat < iso(new Date())).length
+  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal Aksi'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
   return (
     <nav className="nav">
       {items.map(([href, nama]) => (
         <Link key={href} href={href} className={path === href ? 'on' : ''}>
-          {nama}{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}
+          {nama}{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}{href === '/admin/tugas' && telat > 0 && <span className="badge">{telat}</span>}
         </Link>
       ))}
       <span className="sp" />

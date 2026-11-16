@@ -8,6 +8,7 @@ import { openUrl, parseCoords } from '@/lib/maps'
 import PetaSemua from '@/components/PetaSemua'
 import PetaEmbed from '@/components/PetaEmbed'
 import GeoTombol from '@/components/GeoTombol'
+import { STATUS_TUGAS } from '@/lib/tugas'
 import TombolUnduh from '@/components/TombolUnduh'
 import DokumenList from '@/components/DokumenList'
 import { excelAset, profilAset, unduhDocx, unduhPaket } from '@/lib/ekspor'
@@ -31,6 +32,7 @@ const SORTS = [
 
 export default function AsetPage() {
   const { rows, reload, error } = useTable('aset')
+  const { rows: tugas } = useTable('tugas')
   const [q, setQ] = useState(''); const [fk, setFk] = useState(''); const [fc, setFc] = useState('')
   const [fp, setFp] = useState(''); const [fi, setFi] = useState('')
   const [sort, setSort] = useState('nama:asc')
@@ -123,12 +125,12 @@ export default function AsetPage() {
           </tbody></table></div>
         )}
       </div>
-      {edit && <EditAset a={edit} close={() => setEdit(null)} reload={reload} />}
+      {edit && <EditAset a={edit} close={() => setEdit(null)} reload={reload} tugasTerkait={edit.id ? tugas.filter((t) => t.aset_id === edit.id) : []} />}
     </>
   )
 }
 
-function EditAset({ a, close, reload }) {
+function EditAset({ a, close, reload, tugasTerkait = [] }) {
   const [f, setF] = useState({ ...a, foto_urls: a.foto_urls || [] })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -187,6 +189,7 @@ function EditAset({ a, close, reload }) {
       <label>Rekomendasi / keterangan tambahan (mis. program Ramadhan)<textarea rows={3} value={f.rekomendasi ?? ''} onChange={set('rekomendasi')} /></label>
       <label>Keterangan<textarea rows={2} value={f.keterangan ?? ''} onChange={set('keterangan')} /></label>
       {(f.dokumen_santri || []).length > 0 && (<><label>Dokumen data santri (privat, hanya admin)</label><DokumenList dokumen={f.dokumen_santri} /></>)}
+      {tugasTerkait.length > 0 && (<><label>To-do terkait aset ini</label>{tugasTerkait.map((t) => <div className="row" key={t.id}>☑ {t.judul} <span className="m">- {STATUS_TUGAS[t.status]}{t.tenggat ? `, tenggat ${t.tenggat}` : ''}</span></div>)}</>)}
       <label>Foto (maks. 5)</label>
       <div className="thumbs">
         {f.foto_urls.map((u, i) => (

@@ -7,7 +7,7 @@ import { fmt, sum, porsiOf, kgOf, iso, statusAksi, bermasalah, labelStatus, STAT
 
 // Kalender + ringkasan + daftar aksi untuk bulan yang dipilih.
 // Jika onEvent diberikan (admin), klik jadwal memanggilnya; jika tidak, tampil detail.
-export default function JadwalBulan({ events, onDay, onEvent }) {
+export default function JadwalBulan({ events, onDay, onEvent, extra = [] }) {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
   const [sel, setSel] = useState(null)
   const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`
@@ -27,7 +27,7 @@ export default function JadwalBulan({ events, onDay, onEvent }) {
 
   return (
     <>
-      <Kalender events={events} month={month} onMonth={(m) => { setMonth(m); setSel(null) }} onDay={onDay} onEvent={pick} />
+      <Kalender events={[...events, ...extra]} month={month} onMonth={(m) => { setMonth(m); setSel(null) }} onDay={onDay} onEvent={pick} />
       <h3 style={{ marginTop: 18 }}>Ringkasan bulan ini</h3>
       <div className="grid">
         {ringkas.map(([n, v]) => <div className="card kpi" key={n}><b>{v}</b><span>{n}</span></div>)}
