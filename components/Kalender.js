@@ -34,12 +34,13 @@ export default function Kalender({ events = [], month, onMonth, onDay, onEvent }
               className={`cd${d.getMonth() !== month.getMonth() ? ' out' : ''}${k === today ? ' today' : ''}${onDay ? ' click' : ''}`}
               onClick={() => onDay && onDay(k)}>
               <div className="dn">{d.getDate()}</div>
-              {(by[k] || []).map((e) => (
+              {(by[k] || []).slice(0, 3).map((e) => (
                 <div key={e.id} className={`ev ${e.program}${e.selesai ? ' done' : ''}${warnEv(e) ? ' warn' : ''}`} title={e.lokasi}
                   onClick={(ev) => { ev.stopPropagation(); onEvent && onEvent(e) }}>
                   {warnEv(e) ? '⚠ ' : ''}{e.lokasi}
                 </div>
               ))}
+              {(by[k] || []).length > 3 && <div className="more">+{(by[k] || []).length - 3} lagi</div>}
             </div>
           )
         })}

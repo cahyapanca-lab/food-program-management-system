@@ -45,6 +45,10 @@ Halaman:
 - Menu To-do: papan ala Trello (Akan dikerjakan, Sedang dikerjakan, Menunggu, Selesai). Seret kartu antar kolom; di HP pakai tombol ‹ ›.
   To-do bisa dihubungkan ke aset dan jadwal aksi, dan bisa ditampilkan di kalender Jadwal Aksi (khusus admin). Rekap mingguan/bulanan memuat slide dan sheet To-do.
 - Dashboard admin: kartu Pengingat (to-do terlambat/jatuh tempo, aksi hari ini sampai H-3, aksi lewat jadwal yang belum dilaporkan, pengajuan menunggu).
-- Halaman awal dan halaman relawan: ringkasan angka (termasuk persentase aksi bulan ini yang terlaksana), pengingat aksi 7 hari ke depan,
-  tombol Google Kalender / .ics, dan langganan kalender `/jadwal.ics` untuk notifikasi otomatis di HP.
+- Halaman awal dan halaman relawan: ikon lonceng di kanan atas berisi pengingat aksi 7 hari ke depan (klik item untuk melihat detail jadwal),
+  dan langganan kalender `/jadwal.ics` untuk notifikasi otomatis di HP. Ringkasan angka (kartu) hanya ada di dashboard admin.
 - Sudah menjalankan schema.sql versi lama? Jalankan `migrasi_v5.sql` sekali (setelah migrasi_v4.sql).
+
+## Tampilan
+- Semua halaman responsif (PC dan HP). Admin: ikon rumah = kembali ke halaman awal, lonceng = pengingat (to-do, aksi, pengajuan).
+- Fungsi `statistik_publik` dari migrasi_v5.sql tidak dipakai lagi oleh halaman awal (aman dibiarkan).

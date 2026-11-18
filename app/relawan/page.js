@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { uploadFoto, uploadDokumen, DOK_EXT } from '@/lib/storage'
 import { compressImage, mapsLink } from '@/lib/util'
 import JadwalPublik from '@/components/JadwalPublik'
+import TopBar from '@/components/TopBar'
 
 const MIN_FOTO = 5
 const MAX_FOTO = 10
@@ -112,6 +113,8 @@ export default function Relawan() {
   }
 
   return (
+    <>
+    <TopBar kembali />
     <div className="wrap" style={{ maxWidth: 760 }}>
       <h1>Form Pengajuan BUYD / FFC</h1>
       <p className="m">Sekolah Relawan - Program Pangan</p>
@@ -196,5 +199,6 @@ export default function Relawan() {
         <JadwalPublik />
       </div>
     </div>
+    </>
   )
 }

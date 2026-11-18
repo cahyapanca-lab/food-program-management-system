@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTable } from '@/lib/useTable'
 import { iso } from '@/lib/util'
+import BelAdmin from '@/components/BelAdmin'
+import { IkonRumah } from '@/components/Ikon'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -16,12 +18,13 @@ function Login() {
     if (error) setErr('Email atau kata sandi salah')
   }
   return (
-    <div className="wrap" style={{ maxWidth: 380 }}>
+    <div className="wrap" style={{ maxWidth: 400 }}>
+      <Link href="/" className="btn-line" style={{ marginBottom: 14 }}>← Halaman awal</Link>
       <h1>Admin Program Pangan</h1>
       <form className="card" onSubmit={masuk}>
-        <label>Email<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-        <label>Kata sandi<input type="password" required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
-        <div className="f"><button>Masuk</button></div>
+        <label>Email<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
+        <label>Kata sandi<input type="password" required value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" /></label>
+        <div className="f"><button style={{ width: '100%' }}>Masuk</button></div>
         {err && <div className="err">{err}</div>}
       </form>
     </div>
@@ -30,20 +33,23 @@ function Login() {
 
 function Nav() {
   const path = usePathname()
-  const { rows } = useTable('pengajuan', { order: 'id' })
-  const baru = rows.filter((p) => p.status === 'baru').length
+  const { rows: pengajuan } = useTable('pengajuan', { order: 'id' })
   const { rows: tugas } = useTable('tugas', { order: 'id' })
+  const { rows: jadwal } = useTable('jadwal_aksi', { order: 'tanggal' })
+  const baru = pengajuan.filter((p) => p.status === 'baru').length
   const telat = tugas.filter((t) => t.status !== 'selesai' && t.tenggat && t.tenggat < iso(new Date())).length
-  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal Aksi'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
+  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
   return (
     <nav className="nav">
-      {items.map(([href, nama]) => (
-        <Link key={href} href={href} className={path === href ? 'on' : ''}>
-          {nama}{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}{href === '/admin/tugas' && telat > 0 && <span className="badge">{telat}</span>}
-        </Link>
-      ))}
-      <span className="sp" />
-      <Link href="/relawan">Halaman relawan</Link>
+      <Link href="/" className="ib" aria-label="Kembali ke halaman awal" title="Halaman awal"><IkonRumah /></Link>
+      <div className="tabs-scroll">
+        {items.map(([href, nama]) => (
+          <Link key={href} href={href} className={`tab${path === href ? ' on' : ''}`}>
+            {nama}{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}{href === '/admin/tugas' && telat > 0 && <span className="badge">{telat}</span>}
+          </Link>
+        ))}
+      </div>
+      <BelAdmin jadwal={jadwal} tugas={tugas} pengajuan={pengajuan} />
       <button className="sec" onClick={() => supabase.auth.signOut()}>Keluar</button>
     </nav>
   )

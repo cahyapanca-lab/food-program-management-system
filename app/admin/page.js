@@ -3,10 +3,10 @@ import Link from 'next/link'
 import { useTable } from '@/lib/useTable'
 import { TAHUN, fmt, sum, count, iso, porsiOf, kgOf, statusAksi } from '@/lib/util'
 import { terlambatTugas, STATUS_TUGAS, URUT_STATUS } from '@/lib/tugas'
-import { tambahHari } from '@/lib/kalender'
 import Bars from '@/components/Bars'
 import Donut from '@/components/Donut'
 import PetaSemua from '@/components/PetaSemua'
+import KartuRingkasan from '@/components/KartuRingkasan'
 
 export default function Dashboard() {
   const { rows: aset, error } = useTable('aset')
@@ -17,21 +17,11 @@ export default function Dashboard() {
   const baru = aset.filter((a) => a.tahun_aset === TAHUN || a.dari_pengajuan)
   const menunggu = pgj.filter((p) => p.status === 'baru').length
   const hari = iso(new Date())
-  const h3 = tambahHari(hari, 3)
   const jadBulan = jad.filter((j) => j.tanggal.startsWith(hari.slice(0, 7)))
   const mendatang = jad.filter((j) => statusAksi(j) === 'terjadwal' && j.tanggal >= hari).slice(0, 5)
   const terbaru = [...baru].sort((a, b) => b.id - a.id).slice(0, 6)
   const titik = aset.filter((a) => a.latitude != null && a.longitude != null)
 
-  // ---------- pengingat ----------
-  const aktifT = tugas.filter((t) => t.status !== 'selesai')
-  const pengingat = [
-    ...aktifT.filter((t) => terlambatTugas(t, hari)).map((t) => ({ k: 'bad', lb: 'Terlambat', teks: `To-do: ${t.judul}`, info: `tenggat ${t.tenggat}${t.penanggung_jawab ? ` - ${t.penanggung_jawab}` : ''}`, href: '/admin/tugas' })),
-    ...jad.filter((j) => statusAksi(j) === 'terjadwal' && j.tanggal < hari && j.tanggal >= tambahHari(hari, -30)).map((j) => ({ k: 'bad', lb: 'Belum dilaporkan', teks: `Aksi ${j.program}: ${j.lokasi}`, info: `jadwal ${j.tanggal} sudah lewat, status belum diperbarui`, href: '/admin/jadwal' })),
-    ...jad.filter((j) => statusAksi(j) === 'terjadwal' && j.tanggal >= hari && j.tanggal <= h3).map((j) => ({ k: 'urgent', lb: j.tanggal === hari ? 'Aksi hari ini' : `Aksi ${j.tanggal}`, teks: `${j.program}: ${j.lokasi}`, info: j.kota || '', href: '/admin/jadwal' })),
-    ...aktifT.filter((t) => t.tenggat && t.tenggat >= hari && t.tenggat <= h3).map((t) => ({ k: 'urgent', lb: t.tenggat === hari ? 'To-do hari ini' : `To-do ${t.tenggat}`, teks: t.judul, info: t.penanggung_jawab || '', href: '/admin/tugas' })),
-    ...(menunggu ? [{ k: '', lb: 'Pengajuan', teks: `${menunggu} pengajuan aset baru menunggu verifikasi`, info: '', href: '/admin/pengajuan' }] : []),
-  ]
   const perStatus = URUT_STATUS.map((s) => [STATUS_TUGAS[s], tugas.filter((t) => t.status === s).length])
 
   return (
@@ -44,30 +34,35 @@ export default function Dashboard() {
         </div>
         <div className="f" style={{ margin: 0 }}>
           {menunggu > 0 && <Link href="/admin/pengajuan"><button>🔔 {menunggu} pengajuan baru</button></Link>}
-          <Link href="/admin/aset"><button className="ghost">Data aset</button></Link>
-          <Link href="/admin/jadwal"><button className="ghost">Jadwal aksi</button></Link>
-          <Link href="/admin/tugas"><button className="ghost">To-do</button></Link>
         </div>
       </div>
       {error && <div className="err">{error}</div>}
 
+      <KartuRingkasan totalAset={aset.length} pm={sum(aset, 'jumlah_pm')} asetBaru={baru.length}
+        asetImpl={aset.filter((a) => a.sudah_implementasi).length} aksiBulan={jadBulan.length}
+        aksiTerlaksana={jadBulan.filter((j) => statusAksi(j) === 'terlaksana').length} />
+
       <div className="grid2" style={{ marginTop: 14 }}>
-        <div className="card">
-          <h3>🔔 Pengingat {pengingat.length > 0 && <span className="badge">{pengingat.length}</span>}</h3>
-          {pengingat.length === 0 && <div className="m">Tidak ada pengingat. Semua aman 👍</div>}
-          {pengingat.slice(0, 8).map((p, i) => (
-            <Link key={i} href={p.href} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div className="rem"><span className={`lb ${p.k}`}>{p.lb}</span><div><b>{p.teks}</b>{p.info && <div className="m">{p.info}</div>}</div></div>
-            </Link>
-          ))}
-          {pengingat.length > 8 && <div className="m">dan {pengingat.length - 8} pengingat lainnya</div>}
-        </div>
         <div className="card">
           <div className="f" style={{ justifyContent: 'space-between', margin: 0 }}><h3 style={{ margin: 0 }}>☑ To-do</h3><Link href="/admin/tugas">Buka papan</Link></div>
           <div className="grid" style={{ marginTop: 10, gridTemplateColumns: 'repeat(2,1fr)' }}>
             {perStatus.map(([n, v]) => <div className="card kpi" style={{ marginTop: 0, padding: 10 }} key={n}><b style={{ fontSize: 22 }}>{v}</b><span>{n}</span></div>)}
           </div>
           <div className="m" style={{ marginTop: 8 }}>{aktifT.filter((t) => terlambatTugas(t, hari)).length} to-do terlambat</div>
+        </div>
+        <div className="card">
+          <div className="f" style={{ justifyContent: 'space-between', margin: 0 }}><h3 style={{ margin: 0 }}>🗓 Aksi mendatang</h3><Link href="/admin/jadwal">Buka kalender</Link></div>
+          <div className="m">Bulan ini: {jadBulan.length} aksi · {fmt(porsiOf(jadBulan))} porsi · {fmt(kgOf(jadBulan))} kg beras · {fmt(sum(jadBulan, 'jumlah_pm'))} penerima manfaat</div>
+          {mendatang.length === 0 && <div className="m" style={{ marginTop: 8 }}>Tidak ada aksi mendatang.</div>}
+          {mendatang.map((j) => {
+            const d = new Date(j.tanggal)
+            return (
+              <div className="acard" key={j.id} style={{ marginTop: 10 }}>
+                <div className="dbadge"><b>{d.getDate()}</b><small>{d.toLocaleDateString('id-ID', { month: 'short' })}</small></div>
+                <div><b>{j.lokasi}</b> <span className={`tag ${j.program}`}>{j.program}</span>
+                  <div className="m">{j.kota}{j.jumlah_bantuan ? ` · ${j.jumlah_bantuan} ${j.satuan || ''}` : ''}</div></div>
+              </div>)
+          })}
         </div>
       </div>
 
@@ -100,21 +95,6 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="sect"><h2>Jadwal Aksi</h2><Link href="/admin/jadwal">Buka kalender</Link></div>
-      <div className="card" style={{ marginTop: 8 }}>
-        <div className="m">Bulan ini: {jadBulan.length} aksi - {fmt(porsiOf(jadBulan))} porsi - {fmt(kgOf(jadBulan))} kg beras - {fmt(sum(jadBulan, 'jumlah_pm'))} penerima manfaat</div>
-        {mendatang.length === 0 && <div className="m" style={{ marginTop: 8 }}>Tidak ada aksi mendatang.</div>}
-        {mendatang.map((j) => {
-          const d = new Date(j.tanggal)
-          return (
-            <div className="acard" key={j.id} style={{ marginTop: 10 }}>
-              <div className="dbadge"><b>{d.getDate()}</b><small>{d.toLocaleDateString('id-ID', { month: 'short' })}</small></div>
-              <div><b>{j.lokasi}</b> <span className={`tag ${j.program}`}>{j.program}</span>
-                <div className="m">{j.kota}{j.jumlah_bantuan ? ` - ${j.jumlah_bantuan} ${j.satuan || ''}` : ''}</div></div>
-            </div>)
-        })}
       </div>
     </>
   )

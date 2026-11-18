@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Kalender from '@/components/Kalender'
 import PetaSemua from '@/components/PetaSemua'
-import PetaEmbed from '@/components/PetaEmbed'
+import DetailAksi from '@/components/DetailAksi'
 import { fmt, sum, porsiOf, kgOf, iso, statusAksi, bermasalah, labelStatus, STATUS_IKON } from '@/lib/util'
 
 // Kalender + ringkasan + daftar aksi untuk bulan yang dipilih.
@@ -14,11 +14,14 @@ export default function JadwalBulan({ events, onDay, onEvent, extra = [] }) {
   const list = events.filter((e) => e.tanggal.startsWith(key)).sort((a, b) => a.tanggal.localeCompare(b.tanggal))
   const pick = onEvent || setSel
   const hariIni = iso(new Date())
+  const terlaksana = list.filter((e) => statusAksi(e) === 'terlaksana').length
+  const persen = list.length ? Math.round((terlaksana / list.length) * 100) : 0
   const ringkas = [
     ['Total aksi', list.length],
     ['FFC', list.filter((e) => e.program === 'FFC').length],
     ['BUYD', list.filter((e) => e.program === 'BUYD').length],
-    ['Terlaksana', list.filter((e) => statusAksi(e) === 'terlaksana').length],
+    ['Terlaksana', terlaksana],
+    [`Persentase terlaksana (${terlaksana} dari ${list.length} aksi)`, `${persen}%`, persen],
     ...(onEvent ? [['Terkendala', list.filter((e) => bermasalah(e, hariIni)).length]] : []),
     ['Total porsi', fmt(porsiOf(list))],
     ['Total beras (kg)', fmt(kgOf(list))],
@@ -30,7 +33,9 @@ export default function JadwalBulan({ events, onDay, onEvent, extra = [] }) {
       <Kalender events={[...events, ...extra]} month={month} onMonth={(m) => { setMonth(m); setSel(null) }} onDay={onDay} onEvent={pick} />
       <h3 style={{ marginTop: 18 }}>Ringkasan bulan ini</h3>
       <div className="grid">
-        {ringkas.map(([n, v]) => <div className="card kpi" key={n}><b>{v}</b><span>{n}</span></div>)}
+        {ringkas.map(([n, v, bar]) => (
+          <div className="card kpi" key={n}><b>{v}</b><span>{n}</span>{bar !== undefined && <div className="pbar"><div style={{ width: `${bar}%` }} /></div>}</div>
+        ))}
       </div>
 
       {list.some((e) => e.latitude != null && e.longitude != null) || onEvent ? (
@@ -43,22 +48,7 @@ export default function JadwalBulan({ events, onDay, onEvent, extra = [] }) {
         </>
       ) : null}
 
-      {sel && (
-        <div className="card">
-          <b>{sel.lokasi}</b> <span className={`tag ${sel.program}`}>{sel.program}</span> {sel.selesai && <span className="m">(sudah terlaksana)</span>}
-          <div className="m" style={{ marginTop: 6 }}>
-            {sel.kota ? `${sel.kota} - ` : ''}
-            {new Date(sel.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </div>
-          <div style={{ marginTop: 6 }}>
-            {sel.jumlah_bantuan ? `${sel.jumlah_bantuan} ${sel.satuan || ''}` : ''}
-            {sel.jumlah_pm ? ` - ${sel.jumlah_pm} penerima manfaat` : ''}
-          </div>
-          {sel.segmentasi && <div className="m">{sel.segmentasi}</div>}
-          <PetaEmbed lat={sel.latitude} lng={sel.longitude} q={`${sel.lokasi} ${sel.kota || ''}`} />
-          <div className="f"><button className="sec" onClick={() => setSel(null)}>Tutup</button></div>
-        </div>
-      )}
+      {sel && <DetailAksi e={sel} close={() => setSel(null)} />}
 
       <h3 style={{ marginTop: 18 }}>Daftar aksi bulan ini</h3>
       {list.length === 0 && <div className="m">Belum ada jadwal di bulan ini.</div>}
