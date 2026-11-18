@@ -38,7 +38,7 @@ function Nav() {
   const { rows: jadwal } = useTable('jadwal_aksi', { order: 'tanggal' })
   const baru = pengajuan.filter((p) => p.status === 'baru').length
   const telat = tugas.filter((t) => t.status !== 'selesai' && t.tenggat && t.tenggat < iso(new Date())).length
-  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
+  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal'], ['/admin/mitra-dana', 'Mitra & Dana'], ['/admin/opname', 'Stok Alat'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
   return (
     <nav className="nav">
       <Link href="/" className="ib" aria-label="Kembali ke halaman awal" title="Halaman awal"><IkonRumah /></Link>

@@ -21,13 +21,13 @@ function petaLink(a) {
 
 const COLS = [
   ['Selesai', 'sudah_implementasi'], ['Nama aset', 'nama'], ['Kota', 'kota'], ['Cluster', 'cluster'],
-  ['Program', 'program'], ['PM', 'jumlah_pm'], ['PIC', 'pic'], ['Telepon', null], ['Status', 'status'],
+  ['Program', 'program'], ['PM', 'jumlah_pm'], ['PIC', 'pic'], ['Telepon', null], ['Status', 'status'], ['Tahun perolehan / pembaruan', 'tahun_aset'],
   ['Maps', null], ['WhatsApp', null], ['', null],
 ]
 const SORTS = [
   ['nama:asc', 'Nama aset: A-Z'], ['nama:desc', 'Nama aset: Z-A'], ['kota:asc', 'Kota: A-Z'], ['kota:desc', 'Kota: Z-A'],
   ['cluster:asc', 'Cluster: A-Z'], ['program:asc', 'Program: A-Z'], ['jumlah_pm:desc', 'Penerima manfaat: terbanyak'],
-  ['jumlah_pm:asc', 'Penerima manfaat: tersedikit'], ['tahun_aset:desc', 'Tahun aset: terbaru'], ['id:desc', 'Terakhir ditambahkan'],
+  ['jumlah_pm:asc', 'Penerima manfaat: tersedikit'], ['tahun_aset:desc', 'Tahun perolehan: terbaru'], ['id:desc', 'Terakhir ditambahkan'],
 ]
 
 export default function AsetPage() {
@@ -116,6 +116,7 @@ export default function AsetPage() {
                 <td>{a.program ? <span className={`tag ${a.program}`}>{a.program}</span> : '-'}</td>
                 <td>{a.jumlah_pm ?? '-'}</td><td>{a.pic || '-'}</td><td>{a.no_hp || '-'}</td>
                 <td>{a.status === 'perlu_update' ? 'Perlu update' : a.status === 'terbaru' ? 'Terbaru' : '-'}</td>
+                <td>{a.tahun_aset || '-'}{a.tahun_pembaruan ? ` / ${a.tahun_pembaruan}` : ''}</td>
                 <td><a target="_blank" rel="noreferrer" href={petaLink(a)}>Buka</a></td>
                 <td>{wa ? <a target="_blank" rel="noopener noreferrer" href={wa}><button type="button">Chat PIC</button></a> : <span className="m">Tidak ada nomor</span>}</td>
                 <td><button className="sec" onClick={() => setEdit(a)}>Edit</button></td>
@@ -159,7 +160,7 @@ function EditAset({ a, close, reload, tugasTerkait = [] }) {
   async function simpan() {
     if (!f.nama?.trim()) return setErr('Nama aset wajib diisi')
     const { id, dibuat_pada, ...rest } = f
-    for (const k of ['jumlah_pm', 'kg_beras_per_hari', 'tahun_aset', 'latitude', 'longitude']) rest[k] = rest[k] === '' || rest[k] == null ? null : Number(rest[k])
+    for (const k of ['jumlah_pm', 'kg_beras_per_hari', 'tahun_aset', 'tahun_pembaruan', 'latitude', 'longitude']) rest[k] = rest[k] === '' || rest[k] == null ? null : Number(rest[k])
     for (const k of ['program', 'status', 'implementasi_terakhir', 'kota', 'cluster', 'pic', 'no_hp', 'lokasi_maps', 'story', 'keterangan', 'alamat', 'pimpinan', 'rekomendasi']) if (!rest[k]) rest[k] = null
     setBusy(true)
     const r = id ? await supabase.from('aset').update(rest).eq('id', id) : await supabase.from('aset').insert(rest)
@@ -174,7 +175,7 @@ function EditAset({ a, close, reload, tugasTerkait = [] }) {
       {inp('jumlah_pm', 'Jumlah penerima manfaat', 'number')}{inp('kg_beras_per_hari', 'Konsumsi beras (kg / hari)', 'number')}
       {inp('pic', 'Nama PIC')}{inp('no_hp', 'No. WhatsApp PIC (08… atau 62…)')}{inp('pimpinan', 'Pimpinan')}
       <label>Program<select value={f.program || ''} onChange={set('program')}><option value="">-</option><option>FFC</option><option>BUYD</option></select></label>
-      {inp('tahun_aset', 'Tahun aset', 'number')}
+      {inp('tahun_aset', 'Tahun perolehan aset (tahun aset didapatkan)', 'number')}{inp('tahun_pembaruan', 'Tahun pembaruan aset (terakhir diperbarui)', 'number')}
       <label>Status data<select value={f.status || ''} onChange={set('status')}><option value="">-</option><option value="terbaru">Terbaru</option><option value="perlu_update">Perlu update</option></select></label>
       <label>Link Google Maps<input value={f.lokasi_maps ?? ''} onChange={(e) => { const c = parseCoords(e.target.value); setF({ ...f, lokasi_maps: e.target.value, ...(c ? { latitude: c.lat, longitude: c.lng, titik_perkiraan: false } : {}) }) }} placeholder="tempel link Google Maps" /></label>
       <div className="grid">

@@ -5,6 +5,7 @@ import { iso, fmt } from '@/lib/util'
 import { buatRekap, hitungRekap, excelRekapLengkap } from '@/lib/rekap'
 import { excelJadwal } from '@/lib/ekspor'
 import TombolUnduh from '@/components/TombolUnduh'
+import LaporanMitraDana from '@/components/LaporanMitraDana'
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 const fmtTgl = (d) => d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -19,6 +20,7 @@ export default function LaporanPage() {
   const [tgl, setTgl] = useState(iso(now))
   const [bln, setBln] = useState(now.getMonth())
   const [thn, setThn] = useState(now.getFullYear())
+  const [sem, setSem] = useState(now.getMonth() < 6 ? 0 : 1)
 
   const periode = useMemo(() => {
     if (jenis === 'mingguan') {
@@ -28,9 +30,11 @@ export default function LaporanPage() {
       const e = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 6)
       return { mulai: iso(s), akhir: iso(e), label: `${fmtTgl(s)} - ${fmtTgl(e)}` }
     }
+    if (jenis === 'semester') return { mulai: iso(new Date(thn, sem * 6, 1)), akhir: iso(new Date(thn, sem * 6 + 6, 0)), label: `Semester ${sem + 1} ${thn} (${BULAN[sem * 6]} - ${BULAN[sem * 6 + 5]})` }
+    if (jenis === 'tahunan') return { mulai: iso(new Date(thn, 0, 1)), akhir: iso(new Date(thn, 12, 0)), label: `Tahun ${thn}` }
     return { mulai: iso(new Date(thn, bln, 1)), akhir: iso(new Date(thn, bln + 1, 0)), label: `${BULAN[bln]} ${thn}` }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jenis, tgl, bln, thn])
+  }, [jenis, tgl, bln, thn, sem])
 
   const st = hitungRekap({ jenis, ...periode, jadwal, aset, pengajuan, tugas })
   const kpi = [['Total aksi', st.aksi.length], ['Terlaksana', st.terlaksana], ['Aksi terkendala', st.kendala.length], ['Relawan terlibat', st.relawan.length],
@@ -47,13 +51,14 @@ export default function LaporanPage() {
       <div className="card">
         <div className="f">
           <select value={jenis} onChange={(e) => setJenis(e.target.value)}>
-            <option value="mingguan">Rekap mingguan</option><option value="bulanan">Rekap bulanan</option>
+            <option value="mingguan">Rekap mingguan</option><option value="bulanan">Rekap bulanan</option><option value="semester">Rekap per 6 bulan</option><option value="tahunan">Rekap tahunan</option>
           </select>
           {jenis === 'mingguan' ? (
             <label style={{ margin: 0 }}>Pilih tanggal (minggu Senin-Minggu yang memuat tanggal ini)<input type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} /></label>
           ) : (
             <>
-              <select value={bln} onChange={(e) => setBln(Number(e.target.value))}>{BULAN.map((b, i) => <option key={b} value={i}>{b}</option>)}</select>
+              {jenis === 'bulanan' && <select value={bln} onChange={(e) => setBln(Number(e.target.value))}>{BULAN.map((b, i) => <option key={b} value={i}>{b}</option>)}</select>}
+              {jenis === 'semester' && <select value={sem} onChange={(e) => setSem(Number(e.target.value))}><option value={0}>Semester 1 (Jan-Jun)</option><option value={1}>Semester 2 (Jul-Des)</option></select>}
               <select value={thn} onChange={(e) => setThn(Number(e.target.value))}>{[now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => <option key={y}>{y}</option>)}</select>
             </>
           )}
@@ -72,6 +77,7 @@ export default function LaporanPage() {
           Excel lengkap berisi sheet ringkasan, aksi periode, kendala, seluruh data aset (data lama dan baru, ada kolom sumber data), pengajuan, relawan, dan to-do.
         </div>
       </div>
+      <LaporanMitraDana mulai={periode.mulai} akhir={periode.akhir} label={periode.label} />
     </>
   )
 }

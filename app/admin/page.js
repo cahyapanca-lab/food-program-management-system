@@ -22,7 +22,6 @@ export default function Dashboard() {
   const terbaru = [...baru].sort((a, b) => b.id - a.id).slice(0, 6)
   const titik = aset.filter((a) => a.latitude != null && a.longitude != null)
 
-  const aktifT = tugas.filter((t) => t.status !== 'selesai')
   const perStatus = URUT_STATUS.map((s) => [STATUS_TUGAS[s], tugas.filter((t) => t.status === s).length])
 
   return (
@@ -49,7 +48,7 @@ export default function Dashboard() {
           <div className="grid" style={{ marginTop: 10, gridTemplateColumns: 'repeat(2,1fr)' }}>
             {perStatus.map(([n, v]) => <div className="card kpi" style={{ marginTop: 0, padding: 10 }} key={n}><b style={{ fontSize: 22 }}>{v}</b><span>{n}</span></div>)}
           </div>
-          <div className="m" style={{ marginTop: 8 }}>{aktifT.filter((t) => terlambatTugas(t, hari)).length} to-do terlambat</div>
+          <div className="m" style={{ marginTop: 8 }}>{tugas.filter((t) => terlambatTugas(t, hari)).length} to-do terlambat</div>
         </div>
         <div className="card">
           <div className="f" style={{ justifyContent: 'space-between', margin: 0 }}><h3 style={{ margin: 0 }}>🗓 Aksi mendatang</h3><Link href="/admin/jadwal">Buka kalender</Link></div>
