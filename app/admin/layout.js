@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useTable } from '@/lib/useTable'
 import { iso } from '@/lib/util'
 import BelAdmin from '@/components/BelAdmin'
-import { IkonRumah } from '@/components/Ikon'
+import { IkonRumah, IkonMenu, IkonTutup } from '@/components/Ikon'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -33,15 +33,25 @@ function Login() {
 
 function Nav() {
   const path = usePathname()
+  const [buka, setBuka] = useState(false)
+  useEffect(() => { setBuka(false) }, [path])
+  useEffect(() => {
+    const k = (e) => e.key === 'Escape' && setBuka(false)
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [])
   const { rows: pengajuan } = useTable('pengajuan', { order: 'id' })
   const { rows: tugas } = useTable('tugas', { order: 'id' })
   const { rows: jadwal } = useTable('jadwal_aksi', { order: 'tanggal' })
   const baru = pengajuan.filter((p) => p.status === 'baru').length
   const telat = tugas.filter((t) => t.status !== 'selesai' && t.tenggat && t.tenggat < iso(new Date())).length
   const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal'], ['/admin/mitra-dana', 'Mitra & Dana'], ['/admin/opname', 'Stok Alat'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
+  const aktif = (items.find(([h]) => h === path) || ['', 'Admin'])[1]
+  const lencana = (href) => (<>{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}{href === '/admin/tugas' && telat > 0 && <span className="badge">{telat}</span>}</>)
   return (
     <nav className="nav">
       <Link href="/" className="ib" aria-label="Kembali ke halaman awal" title="Halaman awal"><IkonRumah /></Link>
+      <span className="menu-judul">{aktif}</span>
       <div className="tabs-scroll">
         {items.map(([href, nama]) => (
           <Link key={href} href={href} className={`tab${path === href ? ' on' : ''}`}>
@@ -50,7 +60,19 @@ function Nav() {
         ))}
       </div>
       <BelAdmin jadwal={jadwal} tugas={tugas} pengajuan={pengajuan} />
-      <button className="sec" onClick={() => supabase.auth.signOut()}>Keluar</button>
+      <button type="button" className="ib menu-btn" aria-label={buka ? 'Tutup menu' : 'Buka menu'} aria-expanded={buka} onClick={() => setBuka((v) => !v)}>{buka ? <IkonTutup /> : <IkonMenu />}</button>
+      <button className="sec keluar-desk" onClick={() => supabase.auth.signOut()}>Keluar</button>
+      {buka && (
+        <>
+          <div className="menu-back" onClick={() => setBuka(false)} />
+          <div className="menu-panel">
+            {items.map(([href, nama]) => (
+              <Link key={href} href={href} className={path === href ? 'on' : ''} onClick={() => setBuka(false)}><span>{nama}</span>{lencana(href)}</Link>
+            ))}
+            <button type="button" className="sec" onClick={() => supabase.auth.signOut()}>Keluar</button>
+          </div>
+        </>
+      )}
     </nav>
   )
 }
