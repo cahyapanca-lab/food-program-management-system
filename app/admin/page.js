@@ -22,6 +22,7 @@ export default function Dashboard() {
   const terbaru = [...baru].sort((a, b) => b.id - a.id).slice(0, 6)
   const titik = aset.filter((a) => a.latitude != null && a.longitude != null)
 
+  const aktifT = tugas.filter((t) => t.status !== 'selesai')
   const perStatus = URUT_STATUS.map((s) => [STATUS_TUGAS[s], tugas.filter((t) => t.status === s).length])
 
   return (
