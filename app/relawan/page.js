@@ -74,6 +74,9 @@ export default function Relawan() {
     setMsg('')
     if (terisi < MIN_FOTO) return setMsg(`Foto dokumentasi minimal ${MIN_FOTO} (baru ${terisi}).`)
     if (!loc && !f.lokasi_maps.trim()) return setMsg('Ambil titik lokasi atau tempel link Google Maps.')
+    const { data: ada } = await supabase.rpc('cek_aset_ada', { p_nama: f.nama_pondok, p_kota: f.kota })
+    if (ada === 'aset') return setMsg('Aset dengan nama dan kota ini sudah terdaftar, jadi tidak perlu diajukan lagi. Hubungi admin bila datanya perlu diperbarui.')
+    if (ada === 'menunggu') return setMsg('Pengajuan untuk aset ini sudah masuk dan sedang diperiksa admin.')
     setBusy(true)
     try {
       const urls = []

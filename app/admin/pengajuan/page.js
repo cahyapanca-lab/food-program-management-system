@@ -16,7 +16,7 @@ export default function PengajuanPage() {
 
   async function setujui(id) {
     const { error } = await supabase.rpc('setujui_pengajuan', { p_id: id })
-    setMsg(error ? 'Gagal: ' + error.message : 'ok')
+    setMsg(error ? (/aset_unik_nama_kota/.test(error.message) ? 'Gagal: aset dengan nama dan kota yang sama sudah ada di Data Aset. Tolak pengajuan ini, atau perbarui aset lama lewat Data Aset.' : 'Gagal: ' + error.message) : 'ok')
     reload()
   }
   async function tolak(id) {

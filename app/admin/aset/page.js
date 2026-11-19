@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useTable } from '@/lib/useTable'
 import { uploadFoto } from '@/lib/storage'
-import { compressImage, cmp, waLink, TAHUN } from '@/lib/util'
+import { compressImage, cmp, waLink, TAHUN, normTeks } from '@/lib/util'
+import CekDuplikat from '@/components/CekDuplikat'
 import { openUrl, parseCoords } from '@/lib/maps'
 import PetaSemua from '@/components/PetaSemua'
 import PetaEmbed from '@/components/PetaEmbed'
@@ -38,6 +39,12 @@ export default function AsetPage() {
   const [sort, setSort] = useState('nama:asc')
   const [edit, setEdit] = useState(null)
   const [tampil, setTampil] = useState('tabel')
+  const [cek, setCek] = useState(false)
+  const nDup = useMemo(() => {
+    const m = {}
+    rows.forEach((a) => { const k = normTeks(a.nama); if (k) m[k] = (m[k] || 0) + 1 })
+    return Object.values(m).filter((n) => n > 1).length
+  }, [rows])
   const [key, dir] = sort.split(':')
 
   const uniq = (k) => [...new Set(rows.map((r) => r[k]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'id'))
@@ -70,12 +77,14 @@ export default function AsetPage() {
       <h1>Data Aset</h1>
       <div className="m">Cari, urutkan, edit, dan hubungi PIC langsung lewat WhatsApp</div>
       {error && <div className="err">{error}</div>}
+      {cek && <CekDuplikat rows={rows} reload={reload} tutup={() => setCek(false)} />}
       <div className="card">
         <div className="f">
           <input placeholder="Cari nama aset / kota / PIC / nomor" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
           <button className={tampil === 'tabel' ? '' : 'sec'} onClick={() => setTampil('tabel')}>📋 Tabel</button>
           <button className={tampil === 'peta' ? '' : 'sec'} onClick={() => setTampil('peta')}>🗺 Peta</button>
           <button onClick={() => setEdit({ nama: '', tahun_aset: TAHUN, status: 'terbaru', foto_urls: [], sudah_implementasi: false })}>+ Aset</button>
+          <button className="sec" onClick={() => setCek((v) => !v)}>🔍 Cek duplikat{nDup > 0 && <span className="badge">{nDup}</span>}</button>
         </div>
         <div className="f">
           <select value={fk} onChange={(e) => setFk(e.target.value)}><option value="">Semua kota</option>{kotas.map((k) => <option key={k}>{k}</option>)}</select>
@@ -165,7 +174,7 @@ function EditAset({ a, close, reload, tugasTerkait = [] }) {
     setBusy(true)
     const r = id ? await supabase.from('aset').update(rest).eq('id', id) : await supabase.from('aset').insert(rest)
     setBusy(false)
-    if (r.error) return setErr(r.error.message)
+    if (r.error) return setErr(/aset_unik_nama_kota/.test(r.error.message) ? 'Aset dengan nama dan kota yang sama sudah ada. Cari di daftar lalu edit data yang lama, atau gunakan Cek duplikat.' : r.error.message)
     reload(); close()
   }
   return (

@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { useTable } from '@/lib/useTable'
-import { iso, fmt } from '@/lib/util'
+import { iso, fmt, hariKeMinggu, RENTANG_MINGGU } from '@/lib/util'
 import { buatRekap, hitungRekap, excelRekapLengkap } from '@/lib/rekap'
 import { excelJadwal } from '@/lib/ekspor'
 import TombolUnduh from '@/components/TombolUnduh'
@@ -30,7 +30,7 @@ export default function LaporanPage() {
     if (jenis === 'mingguan') {
       const [y, m, d] = (tgl || iso(now)).split('-').map(Number)
       const dt = new Date(y, m - 1, d)
-      const s = new Date(y, m - 1, d - ((dt.getDay() + 6) % 7))
+      const s = new Date(y, m - 1, d - hariKeMinggu(dt.getDay()))
       const e = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 6)
       return { mulai: iso(s), akhir: iso(e), label: `${fmtTgl(s)} - ${fmtTgl(e)}` }
     }
@@ -55,10 +55,10 @@ export default function LaporanPage() {
       <div className="card">
         <div className="f">
           <select value={jenis} onChange={(e) => setJenis(e.target.value)}>
-            <option value="mingguan">Rekap mingguan</option><option value="bulanan">Rekap bulanan</option><option value="semester">Rekap per 6 bulan</option><option value="tahunan">Rekap tahunan</option>
+            <option value="mingguan">Rekap mingguan ({RENTANG_MINGGU})</option><option value="bulanan">Rekap bulanan</option><option value="semester">Rekap per 6 bulan</option><option value="tahunan">Rekap tahunan</option>
           </select>
           {jenis === 'mingguan' ? (
-            <label style={{ margin: 0 }}>Pilih tanggal (minggu Senin-Minggu yang memuat tanggal ini)<input type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} /></label>
+            <label style={{ margin: 0 }}>Pilih tanggal (minggu {RENTANG_MINGGU} yang memuat tanggal ini)<input type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} /></label>
           ) : (
             <>
               {jenis === 'bulanan' && <select value={bln} onChange={(e) => setBln(Number(e.target.value))}>{BULAN.map((b, i) => <option key={b} value={i}>{b}</option>)}</select>}
