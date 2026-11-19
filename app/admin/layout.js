@@ -98,12 +98,13 @@ export default function AdminLayout({ children }) {
   }, [uid])
   if (ses === undefined) return <div className="wrap">Memuat…</div>
   if (!ses) return <Login />
-  if (leader === undefined && ses.user?.app_metadata?.role !== 'leader') return <div className="wrap">Memuat…</div>
-  if (leader || ses.user?.app_metadata?.role === 'leader') return (
+  if (leader === undefined) return <div className="wrap">Memuat…</div>
+  if (leader) return (
     <div className="wrap" style={{ maxWidth: 440 }}>
       <div className="card">
         <h2>Akun leaders</h2>
         <div className="m">Akun ini khusus untuk dashboard leaders (hanya melihat dan berkomentar).</div>
+        <div className="m" style={{ marginTop: 6 }}>Masuk sebagai {ses.user?.email}</div>
         <div className="f"><Link href="/leaders"><button>Buka dashboard leaders</button></Link><button className="sec" onClick={() => supabase.auth.signOut()}>Keluar</button></div>
       </div>
     </div>
