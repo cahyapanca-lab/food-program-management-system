@@ -1,10 +1,12 @@
 'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { fmt, iso, hariKeMinggu, LABEL_MINGGU, RENTANG_MINGGU, STATUS_LABEL } from '@/lib/util'
+import { fmt, iso, hariKeMinggu, LABEL_MINGGU, RENTANG_MINGGU, STATUS_LABEL, mapsLink } from '@/lib/util'
 import Bars from '@/components/Bars'
 import PetaSemua from '@/components/PetaSemua'
+import JadwalBulan from '@/components/JadwalBulan'
+import DetailAksi from '@/components/DetailAksi'
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 const BLN = BULAN.map((b) => b.slice(0, 3))
@@ -72,7 +74,7 @@ function Login() {
   )
 }
 
-const BAGIAN = ['Umum', 'Aset', 'Aksi / jadwal', 'Kendala', 'To-do', 'Stok alat', 'Mitra & dana', 'Peta']
+const BAGIAN = ['Umum', 'Aset', 'Pengajuan', 'Aksi / jadwal', 'Kendala', 'To-do', 'Stok alat', 'Mitra & dana', 'Peta']
 const LABEL_KOMENTAR = { baru: 'Terkirim', dibaca: 'Sudah dibaca admin', ditanggapi: 'Ditanggapi' }
 const wktu = (s) => new Date(s).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
@@ -144,12 +146,195 @@ function Komentar({ profil, periode }) {
   )
 }
 
+// ---- Data lengkap (hanya baca): jadwal aksi, data aset, pengajuan. Semua lewat fungsi database khusus leaders.
+function useLeaderData(fn) {
+  const [rows, setRows] = useState(null)
+  const [err, setErr] = useState('')
+  useEffect(() => {
+    let batal = false
+    const muat = async () => {
+      const { data, error } = await supabase.rpc(fn)
+      if (batal) return
+      if (error) setErr(error.message.includes(fn) ? `Fungsi ${fn} belum ada di Supabase. Jalankan migrasi_v10.sql.` : error.message)
+      else { setErr(''); setRows(Array.isArray(data) ? data : []) }
+    }
+    muat()
+    const t = setInterval(muat, 60000)
+    return () => { batal = true; clearInterval(t) }
+  }, [fn])
+  return { rows, err }
+}
+
+const linkPeta = (a) => (a.latitude != null && a.longitude != null ? mapsLink(a.latitude, a.longitude) : a.lokasi_maps || '')
+const tglPanjang = (s) => (s ? new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-')
+
+function Foto({ urls }) {
+  if (!urls || urls.length === 0) return null
+  return (
+    <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      {urls.slice(0, 10).map((u) => (
+        <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="Foto dokumentasi" loading="lazy" style={{ height: 84, borderRadius: 8, border: '1px solid var(--b)' }} /></a>
+      ))}
+    </div>
+  )
+}
+
+function Rinci({ baris }) {
+  return (
+    <dl className="dl">
+      {baris.filter(([, v]) => v !== null && v !== undefined && v !== '').map(([k, v]) => (<div key={k} style={{ display: 'contents' }}><dt>{k}</dt><dd>{v}</dd></div>))}
+    </dl>
+  )
+}
+
+function LeaderJadwal() {
+  const { rows, err } = useLeaderData('leader_jadwal')
+  const [sel, setSel] = useState(null)
+  if (err) return <div className="err card" style={{ marginTop: 14 }}>{err}</div>
+  if (!rows) return <div className="card m" style={{ marginTop: 14 }}>Memuat…</div>
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <div className="m" style={{ marginBottom: 8 }}>Klik jadwal untuk melihat detail. Tampilan ini hanya untuk dilihat.</div>
+      <JadwalBulan events={rows} onEvent={setSel} />
+      {sel && <DetailAksi e={sel} close={() => setSel(null)} />}
+    </div>
+  )
+}
+
+function LeaderAset() {
+  const { rows, err } = useLeaderData('leader_aset')
+  const [q, setQ] = useState('')
+  const [prog, setProg] = useState('')
+  const [impl, setImpl] = useState('')
+  const [mode, setMode] = useState('tabel')
+  const [buka, setBuka] = useState(null)
+  const list = useMemo(() => {
+    const t = q.trim().toLowerCase()
+    return (rows || []).filter((a) => (!prog || a.program === prog)
+      && (!impl || (impl === 'ya') === !!a.sudah_implementasi)
+      && (!t || [a.nama, a.kota, a.cluster, a.pic, a.pimpinan].some((v) => (v || '').toLowerCase().includes(t))))
+  }, [rows, q, prog, impl])
+  if (err) return <div className="err card" style={{ marginTop: 14 }}>{err}</div>
+  if (!rows) return <div className="card m" style={{ marginTop: 14 }}>Memuat…</div>
+  const titik = list.filter((a) => a.latitude != null && a.longitude != null)
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <div className="f" style={{ margin: 0 }}>
+        <input placeholder="Cari nama, kota, cluster, PIC…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 220px' }} />
+        <select value={prog} onChange={(e) => setProg(e.target.value)}><option value="">Semua program</option><option value="FFC">FFC</option><option value="BUYD">BUYD</option></select>
+        <select value={impl} onChange={(e) => setImpl(e.target.value)}><option value="">Semua implementasi</option><option value="ya">Sudah implementasi</option><option value="belum">Belum implementasi</option></select>
+        <button className={mode === 'tabel' ? '' : 'sec'} onClick={() => setMode('tabel')}>Tabel</button>
+        <button className={mode === 'peta' ? '' : 'sec'} onClick={() => setMode('peta')}>Peta</button>
+      </div>
+      <div className="m" style={{ margin: '8px 0' }}>Menampilkan {list.length} dari {rows.length} aset · {list.filter((a) => a.program === 'FFC').length} FFC · {list.filter((a) => a.program === 'BUYD').length} BUYD · {list.filter((a) => a.sudah_implementasi).length} sudah implementasi. Hanya untuk dilihat; nomor telepon dan dokumen santri tidak ditampilkan.</div>
+      {mode === 'peta' ? (
+        <>
+          <PetaSemua height={460} items={titik.map((a) => ({ id: a.id, lat: a.latitude, lng: a.longitude, title: a.nama, program: a.program, sub: `${a.kota || ''}${a.jumlah_pm ? ' - ' + a.jumlah_pm + ' PM' : ''}` }))} />
+          <div className="m" style={{ marginTop: 8 }}>{titik.length} dari {list.length} aset punya titik lokasi.</div>
+        </>
+      ) : (
+        <div className="sc"><table>
+          <thead><tr><th>Nama</th><th>Kota</th><th>Cluster</th><th>Program</th><th>PM</th><th>Beras kg/hari</th><th>PIC</th><th>Status</th><th>Tahun</th><th>Implementasi</th><th>Peta</th></tr></thead>
+          <tbody>
+            {list.map((a) => (
+              <Fragment key={a.id}>
+                <tr style={{ cursor: 'pointer' }} onClick={() => setBuka(buka === a.id ? null : a.id)}>
+                  <td>{buka === a.id ? '▾ ' : '▸ '}{a.nama}{a.dari_pengajuan && <span className="badge">baru</span>}</td>
+                  <td>{a.kota}</td><td>{a.cluster}</td>
+                  <td>{a.program ? <span className={`tag ${a.program}`}>{a.program}</span> : '-'}</td>
+                  <td>{a.jumlah_pm ?? '-'}</td><td>{a.kg_beras_per_hari ?? '-'}</td><td>{a.pic || '-'}</td>
+                  <td>{a.status === 'perlu_update' ? 'Perlu update' : a.status === 'terbaru' ? 'Terbaru' : '-'}</td>
+                  <td>{a.tahun_aset || '-'}{a.tahun_pembaruan ? ` / ${a.tahun_pembaruan}` : ''}</td>
+                  <td>{a.sudah_implementasi ? '✅ Sudah' : 'Belum'}</td>
+                  <td>{linkPeta(a) ? <a target="_blank" rel="noreferrer" href={linkPeta(a)} onClick={(e) => e.stopPropagation()}>Buka</a> : '-'}</td>
+                </tr>
+                {buka === a.id && (
+                  <tr><td colSpan={11} style={{ whiteSpace: 'normal' }}>
+                    <Rinci baris={[
+                      ['Alamat', a.alamat], ['Pimpinan', a.pimpinan], ['Keterangan', a.keterangan],
+                      ['Implementasi terakhir', a.implementasi_terakhir ? tglPanjang(a.implementasi_terakhir) : ''],
+                      ['Cerita / latar belakang', a.story], ['Rekomendasi', a.rekomendasi],
+                      ['Titik lokasi', a.titik_perkiraan ? 'Perkiraan (otomatis)' : ''],
+                    ]} />
+                    <Foto urls={a.foto_urls} />
+                  </td></tr>
+                )}
+              </Fragment>
+            ))}
+            {list.length === 0 && <tr><td colSpan={11} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
+          </tbody>
+        </table></div>
+      )}
+    </div>
+  )
+}
+
+const STATUS_PGJ = { baru: 'Menunggu', disetujui: 'Disetujui', ditolak: 'Ditolak' }
+const TAG_PGJ = { baru: 'baru', disetujui: 'ditanggapi', ditolak: 'dibaca' }
+
+function LeaderPengajuan() {
+  const { rows, err } = useLeaderData('leader_pengajuan')
+  const [st, setSt] = useState('baru')
+  const [q, setQ] = useState('')
+  const [buka, setBuka] = useState(null)
+  const list = useMemo(() => {
+    const t = q.trim().toLowerCase()
+    return (rows || []).filter((p) => (!st || p.status === st)
+      && (!t || [p.nama_pondok, p.kota, p.jenis, p.nama_pengaju, p.organisasi].some((v) => (v || '').toLowerCase().includes(t))))
+  }, [rows, st, q])
+  if (err) return <div className="err card" style={{ marginTop: 14 }}>{err}</div>
+  if (!rows) return <div className="card m" style={{ marginTop: 14 }}>Memuat…</div>
+  const n = (s) => rows.filter((p) => p.status === s).length
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <div className="f" style={{ margin: 0 }}>
+        {[['baru', `Menunggu (${n('baru')})`], ['disetujui', `Disetujui (${n('disetujui')})`], ['ditolak', `Ditolak (${n('ditolak')})`], ['', `Semua (${rows.length})`]].map(([v, l]) => (
+          <button key={v || 'semua'} className={st === v ? '' : 'sec'} onClick={() => setSt(v)}>{l}</button>
+        ))}
+        <input placeholder="Cari pondok, kota, pengaju…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 220px' }} />
+      </div>
+      <div className="m" style={{ margin: '8px 0' }}>Hanya untuk dilihat. Persetujuan dilakukan admin; nomor telepon dan dokumen santri tidak ditampilkan.</div>
+      <div className="sc"><table>
+        <thead><tr><th>Tanggal</th><th>Pondok / panti</th><th>Kota</th><th>Jenis</th><th>Program</th><th>Penghuni</th><th>Pengaju</th><th>Status</th></tr></thead>
+        <tbody>
+          {list.map((p) => (
+            <Fragment key={p.id}>
+              <tr style={{ cursor: 'pointer' }} onClick={() => setBuka(buka === p.id ? null : p.id)}>
+                <td>{tglPanjang(p.dibuat_pada)}</td>
+                <td>{buka === p.id ? '▾ ' : '▸ '}{p.nama_pondok}</td>
+                <td>{p.kota || '-'}</td><td>{p.jenis || '-'}</td>
+                <td><span className={`tag ${p.program}`}>{p.program}</span></td>
+                <td>{p.jumlah_penghuni ?? '-'}</td>
+                <td>{p.nama_pengaju}{p.organisasi ? ` (${p.organisasi})` : ''}</td>
+                <td><span className={`tag ${TAG_PGJ[p.status] || ''}`}>{STATUS_PGJ[p.status] || p.status}</span></td>
+              </tr>
+              {buka === p.id && (
+                <tr><td colSpan={8} style={{ whiteSpace: 'normal' }}>
+                  <Rinci baris={[
+                    ['Alamat pondok', p.alamat_pondok], ['Pimpinan', p.pimpinan],
+                    ['Konsumsi beras (kg)', p.konsumsi_beras_kg], ['Kategori', p.kategori],
+                    ['Cerita / latar belakang', p.story], ['Rekomendasi', p.rekomendasi],
+                  ]} />
+                  {linkPeta(p) && <div style={{ marginTop: 6 }}><a target="_blank" rel="noreferrer" href={linkPeta(p)}>Buka lokasi di peta</a></div>}
+                  <Foto urls={p.foto_urls} />
+                </td></tr>
+              )}
+            </Fragment>
+          ))}
+          {list.length === 0 && <tr><td colSpan={8} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada pengajuan.</td></tr>}
+        </tbody>
+      </table></div>
+    </div>
+  )
+}
+
 function Isi({ user }) {
   const [jenis, setJenis] = useState('bulanan')
   const [off, setOff] = useState(0)
   const [d, setD] = useState(null)
   const [err, setErr] = useState('')
   const [profil, setProfil] = useState(null)
+  const [tab, setTab] = useState('ringkasan')
   const per = useMemo(() => periodeDari(jenis, off), [jenis, off])
 
   useEffect(() => {
@@ -187,6 +372,17 @@ function Isi({ user }) {
         <div className="f" style={{ margin: 0 }}><button onClick={() => supabase.auth.signOut()}>Keluar</button></div>
       </div>
 
+      <div className="f">
+        {[['ringkasan', '📊 Ringkasan'], ['jadwal', '🗓 Jadwal aksi'], ['aset', '🏠 Data aset'], ['pengajuan', '📝 Pengajuan']].map(([v, l]) => (
+          <button key={v} className={tab === v ? '' : 'sec'} onClick={() => setTab(v)}>{l}</button>
+        ))}
+      </div>
+
+      {tab === 'jadwal' && <LeaderJadwal />}
+      {tab === 'aset' && <LeaderAset />}
+      {tab === 'pengajuan' && <LeaderPengajuan />}
+
+      {tab === 'ringkasan' && (<>
       <div className="card">
         <div className="f" style={{ margin: 0 }}>
           <select value={jenis} onChange={(e) => { setJenis(e.target.value); setOff(0) }}>
@@ -267,8 +463,9 @@ function Isi({ user }) {
           </div>
         </>
       )}
+      </>)}
 
-      <Komentar profil={profil} periode={per.label} />
+      <Komentar profil={profil} periode={tab === 'ringkasan' ? per.label : null} />
     </div>
   )
 }
