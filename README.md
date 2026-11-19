@@ -52,3 +52,11 @@ Halaman:
 ## Tampilan
 - Semua halaman responsif (PC dan HP). Admin: ikon rumah = kembali ke halaman awal, lonceng = pengingat (to-do, aksi, pengajuan).
 - Fungsi `statistik_publik` dari migrasi_v5.sql tidak dipakai lagi oleh halaman awal (aman dibiarkan).
+
+## Dashboard Leaders (v9: hanya lihat + komentar)
+- Alamat: `/leaders`. Tombol **Masuk leaders** ada di halaman awal, di samping **Masuk admin**.
+- Leaders (manaf@, rani@, umar@sekolahrelawan.org) hanya bisa MELIHAT ringkasan (aset, aksi, kendala, to-do terlambat, stok alat, mitra, dana, peta) dan MENULIS KOMENTAR. Tidak ada tombol ubah/hapus, dan database menolak perubahan dari akun leaders.
+- Admin membaca dan membalas komentar di menu **Komentar** (lencana jingga = komentar baru) atau lewat tombol di Dashboard admin.
+- Pasang: jalankan `migrasi_v9.sql` sekali di Supabase (prasyarat: `migrasi_v6.sql`). `migrasi_v8.sql` tidak perlu lagi. Lalu buat akun login di Authentication > Users > Add user (Auto Confirm) untuk tiga email di atas.
+- Peran ditentukan dari tabel `leaders` (berdasarkan email), bukan dari metadata akun. Akun yang tidak ada di tabel itu adalah admin.
+- Tambah leaders: `insert into leaders (email, nama) values ('email@baru.org', 'Nama');` lalu buat akunnya di Authentication. Cabut akses: `delete from leaders where email = '...';`

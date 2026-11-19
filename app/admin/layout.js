@@ -43,11 +43,13 @@ function Nav() {
   const { rows: pengajuan } = useTable('pengajuan', { order: 'id' })
   const { rows: tugas } = useTable('tugas', { order: 'id' })
   const { rows: jadwal } = useTable('jadwal_aksi', { order: 'tanggal' })
+  const { rows: komentar } = useTable('komentar_leader', { order: 'id' })
+  const kBaru = komentar.filter((k) => k.status === 'baru').length
   const baru = pengajuan.filter((p) => p.status === 'baru').length
   const telat = tugas.filter((t) => t.status !== 'selesai' && t.tenggat && t.tenggat < iso(new Date())).length
-  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal'], ['/admin/mitra-dana', 'Mitra & Dana'], ['/admin/opname', 'Stok Alat'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/laporan', 'Laporan']]
+  const items = [['/admin', 'Dashboard'], ['/admin/aset', 'Data Aset'], ['/admin/pengajuan', 'Pengajuan'], ['/admin/jadwal', 'Jadwal'], ['/admin/mitra-dana', 'Mitra & Dana'], ['/admin/opname', 'Stok Alat'], ['/admin/tugas', 'To-do'], ['/admin/relawan', 'Relawan'], ['/admin/komentar', 'Komentar'], ['/admin/laporan', 'Laporan']]
   const aktif = (items.find(([h]) => h === path) || ['', 'Admin'])[1]
-  const lencana = (href) => (<>{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}{href === '/admin/tugas' && telat > 0 && <span className="badge">{telat}</span>}</>)
+  const lencana = (href) => (<>{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}{href === '/admin/tugas' && telat > 0 && <span className="badge">{telat}</span>}{href === '/admin/komentar' && kBaru > 0 && <span className="badge">{kBaru}</span>}</>)
   return (
     <nav className="nav">
       <Link href="/" className="ib" aria-label="Kembali ke halaman awal" title="Halaman awal"><IkonRumah /></Link>
@@ -55,7 +57,7 @@ function Nav() {
       <div className="tabs-scroll">
         {items.map(([href, nama]) => (
           <Link key={href} href={href} className={`tab${path === href ? ' on' : ''}`}>
-            {nama}{href === '/admin/pengajuan' && baru > 0 && <span className="badge">{baru}</span>}{href === '/admin/tugas' && telat > 0 && <span className="badge">{telat}</span>}
+            {nama}{lencana(href)}
           </Link>
         ))}
       </div>
@@ -84,7 +86,27 @@ export default function AdminLayout({ children }) {
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSes(s))
     return () => data.subscription.unsubscribe()
   }, [])
+  const uid = ses?.user?.id
+  const [leader, setLeader] = useState(undefined) // undefined = sedang dicek
+  useEffect(() => {
+    if (!uid) { setLeader(undefined); return }
+    let batal = false
+    supabase.rpc('profil_leader').then(({ data, error }) => {
+      if (!batal) setLeader(!error && data?.leader === true)
+    })
+    return () => { batal = true }
+  }, [uid])
   if (ses === undefined) return <div className="wrap">Memuat…</div>
   if (!ses) return <Login />
+  if (leader === undefined && ses.user?.app_metadata?.role !== 'leader') return <div className="wrap">Memuat…</div>
+  if (leader || ses.user?.app_metadata?.role === 'leader') return (
+    <div className="wrap" style={{ maxWidth: 440 }}>
+      <div className="card">
+        <h2>Akun leaders</h2>
+        <div className="m">Akun ini khusus untuk dashboard leaders (hanya melihat dan berkomentar).</div>
+        <div className="f"><Link href="/leaders"><button>Buka dashboard leaders</button></Link><button className="sec" onClick={() => supabase.auth.signOut()}>Keluar</button></div>
+      </div>
+    </div>
+  )
   return (<><Nav /><div className="wrap">{children}</div></>)
 }

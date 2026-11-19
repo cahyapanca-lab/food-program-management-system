@@ -192,3 +192,12 @@ iframe.map{width:100%;height:210px;border:0;border-radius:12px;margin-top:10px}
   .sect{flex-wrap:wrap;gap:6px}
   td,th{font-size:12.5px}
 }
+
+/* tombol masuk di bilah atas (HP: teks "Masuk" disembunyikan agar muat) */
+@media(max-width:480px){.tb-in{gap:6px}.tb-in .btn-line{padding:7px 10px;font-size:13px;text-transform:capitalize}.tb-in .btn-line .lg{display:none}}
+/* komentar leaders */
+.kom{border:1px solid var(--b);border-radius:12px;padding:12px;margin:10px 0;background:var(--c)}
+.kom .tx{white-space:pre-wrap;margin:6px 0}
+.kom .bl{margin-top:8px;padding:8px 10px;border-left:3px solid var(--a);background:var(--a2);border-radius:6px;font-size:14px}
+.tag.baru{background:#fde6c8;color:#7c3a00}.tag.dibaca{background:#e5e7eb;color:#374151}.tag.ditanggapi{background:#d6efe0;color:#14532d}
+@media(prefers-color-scheme:dark){.tag.baru{background:#5a3a14;color:#fbd9a8}.tag.dibaca{background:#2d3340;color:#cbd5e1}.tag.ditanggapi{background:#1f4a35;color:#b8ecd0}}

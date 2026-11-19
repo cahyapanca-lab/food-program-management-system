@@ -13,6 +13,8 @@ export default function Dashboard() {
   const { rows: pgj } = useTable('pengajuan', { order: 'id', asc: false })
   const { rows: jad } = useTable('jadwal_aksi', { order: 'tanggal' })
   const { rows: tugas } = useTable('tugas', { order: 'tenggat' })
+  const { rows: kom } = useTable('komentar_leader', { order: 'id' })
+  const komBaru = kom.filter((k) => k.status === 'baru').length
 
   const baru = aset.filter((a) => a.tahun_aset === TAHUN || a.dari_pengajuan)
   const menunggu = pgj.filter((p) => p.status === 'baru').length
@@ -34,6 +36,7 @@ export default function Dashboard() {
         </div>
         <div className="f" style={{ margin: 0 }}>
           {menunggu > 0 && <Link href="/admin/pengajuan"><button>🔔 {menunggu} pengajuan baru</button></Link>}
+          {komBaru > 0 && <Link href="/admin/komentar"><button>💬 {komBaru} komentar leaders</button></Link>}
         </div>
       </div>
       {error && <div className="err">{error}</div>}
