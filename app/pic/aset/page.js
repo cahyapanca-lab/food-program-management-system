@@ -12,6 +12,7 @@ import GeoTombol from '@/components/GeoTombol'
 import { STATUS_TUGAS } from '@/lib/tugas'
 import TombolUnduh from '@/components/TombolUnduh'
 import DokumenList from '@/components/DokumenList'
+import DetailAset from '@/components/DetailAset'
 import { excelAset, profilAset, unduhDocx, unduhPaket } from '@/lib/ekspor'
 
 function petaLink(a) {
@@ -38,6 +39,7 @@ export default function AsetPage() {
   const [fp, setFp] = useState(''); const [fi, setFi] = useState('')
   const [sort, setSort] = useState('nama:asc')
   const [edit, setEdit] = useState(null)
+  const [detail, setDetail] = useState(null)
   const [hapus, setHapus] = useState(null)
   const [tampil, setTampil] = useState('tabel')
   const [cek, setCek] = useState(false)
@@ -121,7 +123,7 @@ export default function AsetPage() {
             return (
               <tr key={a.id}>
                 <td><input type="checkbox" checked={!!a.sudah_implementasi} onChange={(e) => centang(a, e.target.checked)} aria-label="Sudah implementasi" /></td>
-                <td>{a.nama}{a.dari_pengajuan && <span className="badge">baru</span>}</td>
+                <td><button type="button" onClick={() => setDetail(a)} title="Lihat detail aset" style={{ background: 'none', border: 0, padding: 0, color: 'var(--a)', font: 'inherit', fontWeight: 600, textAlign: 'left', cursor: 'pointer' }}>{a.nama}</button>{a.dari_pengajuan && <span className="badge">baru</span>}</td>
                 <td>{a.kota}</td><td>{a.cluster}</td>
                 <td>{a.program ? <span className={`tag ${a.program}`}>{a.program}</span> : '-'}</td>
                 <td>{a.jumlah_pm ?? '-'}</td><td>{a.pic || '-'}</td><td>{a.no_hp || '-'}</td>
@@ -130,13 +132,14 @@ export default function AsetPage() {
                 <td>{a.link_dokumentasi ? <a target="_blank" rel="noreferrer" href={a.link_dokumentasi}>📎 Buka</a> : <span className="m">-</span>}</td>
                 <td><a target="_blank" rel="noreferrer" href={petaLink(a)}>Buka</a></td>
                 <td>{wa ? <a target="_blank" rel="noopener noreferrer" href={wa}><button type="button">Chat PIC</button></a> : <span className="m">Tidak ada nomor</span>}</td>
-                <td style={{ whiteSpace: 'nowrap' }}><button className="sec" onClick={() => setEdit(a)}>Edit</button> <button className="sec" style={{ color: '#d14343' }} onClick={() => setHapus(a)}>Hapus</button></td>
+                <td style={{ whiteSpace: 'nowrap' }}><button className="sec" onClick={() => setDetail(a)}>Detail</button> <button className="sec" onClick={() => setEdit(a)}>Edit</button> <button className="sec" style={{ color: '#d14343' }} onClick={() => setHapus(a)}>Hapus</button></td>
               </tr>)
           })}
             {list.length === 0 && <tr><td colSpan={14} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
           </tbody></table></div>
         )}
       </div>
+      {detail && <DetailAset a={rows.find((r) => r.id === detail.id) || detail} tugas={tugas.filter((t) => t.aset_id === detail.id)} tutup={() => setDetail(null)} edit={() => { const a = rows.find((r) => r.id === detail.id) || detail; setDetail(null); setEdit(a) }} />}
       {edit && <EditAset a={edit} close={() => setEdit(null)} reload={reload} onHapus={setHapus} tugasTerkait={edit.id ? tugas.filter((t) => t.aset_id === edit.id) : []} />}
       {hapus && <HapusAset a={hapus} nTugas={tugas.filter((t) => t.aset_id === hapus.id).length} close={() => setHapus(null)} selesai={() => { setHapus(null); setEdit(null); reload() }} />}
     </>
@@ -195,7 +198,7 @@ function EditAset({ a, close, reload, onHapus, tugasTerkait = [] }) {
   const inp = (k, l, t = 'text') => <label>{l}<input type={t} value={f[k] ?? ''} onChange={set(k)} /></label>
 
   async function tambahFoto(e) {
-    const files = [...e.target.files].slice(0, 5 - f.foto_urls.length)
+    const files = [...e.target.files].slice(0, 10 - f.foto_urls.length)
     if (!files.length) return
     setBusy(true); setErr('')
     try {
@@ -220,20 +223,27 @@ function EditAset({ a, close, reload, onHapus, tugasTerkait = [] }) {
     for (const k of ['program', 'status', 'implementasi_terakhir', 'kota', 'cluster', 'pic', 'no_hp', 'lokasi_maps', 'story', 'keterangan', 'alamat', 'pimpinan', 'rekomendasi']) if (!rest[k]) rest[k] = null
     if ('link_dokumentasi' in rest) rest.link_dokumentasi = String(rest.link_dokumentasi ?? '').trim() || null
     if (rest.link_dokumentasi && !/^https?:\/\//i.test(rest.link_dokumentasi)) return setErr('Link dokumentasi harus diawali http:// atau https://')
+    for (const k of ['organisasi', 'alamat_pengaju']) if (k in rest) rest[k] = String(rest[k] ?? '').trim() || null
     setBusy(true)
     const r = id ? await supabase.from('aset').update(rest).eq('id', id) : await supabase.from('aset').insert(rest)
     setBusy(false)
     if (r.error && /link_dokumentasi/.test(r.error.message)) return setErr(/aset_link_dokumentasi_cek/.test(r.error.message) ? 'Link dokumentasi harus diawali http:// atau https://' : 'Kolom link dokumentasi belum ada di database. Jalankan migrasi_v11.sql di Supabase.')
+    if (r.error && /organisasi|alamat_pengaju/.test(r.error.message)) return setErr('Kolom organisasi / alamat pengaju belum ada di database. Jalankan migrasi_v12.sql di Supabase SQL Editor.')
     if (r.error) return setErr(/aset_unik_nama_kota/.test(r.error.message) ? 'Aset dengan nama dan kota yang sama sudah ada. Cari di daftar lalu edit data yang lama, atau gunakan Cek duplikat.' : r.error.message)
     reload(); close()
   }
   return (
     <div className="modal" onClick={() => !busy && close()}><div onClick={(e) => e.stopPropagation()}>
       <h2>{a.id ? 'Edit aset' : 'Tambah aset'}</h2>
-      {inp('nama', 'Nama pondok / panti / lokasi')}{inp('kota', 'Kota')}{inp('cluster', 'Cluster (jenis aset)')}{inp('alamat', 'Alamat lengkap')}
-      {inp('jumlah_pm', 'Jumlah penerima manfaat', 'number')}{inp('kg_beras_per_hari', 'Konsumsi beras (kg / hari)', 'number')}
-      {inp('pic', 'Nama PIC')}{inp('no_hp', 'No. WhatsApp PIC (08… atau 62…)')}{inp('pimpinan', 'Pimpinan')}
+      <h3 style={{ margin: '12px 0 0' }}>Data pengaju</h3>
+      {inp('pic', 'Nama pengaju / PIC')}{inp('no_hp', 'No. Telp / WhatsApp (08… atau 62…)')}{inp('organisasi', 'Nama organisasi')}
+      <label>Alamat pengaju<textarea rows={2} value={f.alamat_pengaju ?? ''} onChange={set('alamat_pengaju')} maxLength={400} /></label>
+      <h3 style={{ margin: '16px 0 0' }}>Data pondok / panti</h3>
       <label>Program<select value={f.program || ''} onChange={set('program')}><option value="">-</option><option>FFC</option><option>BUYD</option></select></label>
+      {inp('cluster', 'Jenis lembaga (cluster)')}{inp('nama', 'Nama pondok / panti / lokasi')}{inp('kota', 'Kota / Kabupaten')}
+      <label>Alamat lengkap<textarea rows={3} value={f.alamat ?? ''} onChange={set('alamat')} /></label>
+      {inp('jumlah_pm', 'Jumlah santri & pengurus (penerima manfaat)', 'number')}{inp('pimpinan', 'Pimpinan pondok / panti')}{inp('kg_beras_per_hari', 'Konsumsi beras (kg / hari)', 'number')}
+      <h3 style={{ margin: '16px 0 0' }}>Status &amp; lokasi</h3>
       {inp('tahun_aset', 'Tahun perolehan aset (tahun aset didapatkan)', 'number')}{inp('tahun_pembaruan', 'Tahun pembaruan aset (terakhir diperbarui)', 'number')}
       <label>Status data<select value={f.status || ''} onChange={set('status')}><option value="">-</option><option value="terbaru">Terbaru</option><option value="perlu_update">Perlu update</option></select></label>
       <label>Link Google Maps<input value={f.lokasi_maps ?? ''} onChange={(e) => { const c = parseCoords(e.target.value); setF({ ...f, lokasi_maps: e.target.value, ...(c ? { latitude: c.lat, longitude: c.lng, titik_perkiraan: false } : {}) }) }} placeholder="tempel link Google Maps" /></label>
@@ -245,20 +255,20 @@ function EditAset({ a, close, reload, onHapus, tugasTerkait = [] }) {
       <PetaEmbed lat={f.latitude} lng={f.longitude} q={`${f.nama || ''} ${f.kota || ''}`} />
       <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={!!f.sudah_implementasi} onChange={(e) => setF({ ...f, sudah_implementasi: e.target.checked })} /> Sudah terimplementasi</label>
       {inp('implementasi_terakhir', 'Implementasi terakhir', 'date')}
-      <label>Story aset<textarea rows={5} value={f.story ?? ''} onChange={set('story')} /></label>
+      <label>Kenapa harus dibantu? (story / biografi)<textarea rows={5} value={f.story ?? ''} onChange={set('story')} /></label>
       <label>Rekomendasi / keterangan tambahan (mis. program Ramadhan)<textarea rows={3} value={f.rekomendasi ?? ''} onChange={set('rekomendasi')} /></label>
-      <label>Keterangan<textarea rows={2} value={f.keterangan ?? ''} onChange={set('keterangan')} /></label>
+      <label>Kategori santri / keterangan<textarea rows={2} value={f.keterangan ?? ''} onChange={set('keterangan')} /></label>
       <label>Link dokumentasi (Google Drive / lainnya)<input value={f.link_dokumentasi ?? ''} onChange={set('link_dokumentasi')} placeholder="https://drive.google.com/…" inputMode="url" /></label>
       {/^https?:\/\//i.test(f.link_dokumentasi || '') && <div className="m"><a href={f.link_dokumentasi} target="_blank" rel="noreferrer">Buka link dokumentasi ↗</a></div>}
       {(f.dokumen_santri || []).length > 0 && (<><label>Dokumen data santri (privat, hanya PIC)</label><DokumenList dokumen={f.dokumen_santri} /></>)}
       {tugasTerkait.length > 0 && (<><label>To-do terkait aset ini</label>{tugasTerkait.map((t) => <div className="row" key={t.id}>☑ {t.judul} <span className="m">- {STATUS_TUGAS[t.status]}{t.tenggat ? `, tenggat ${t.tenggat}` : ''}</span></div>)}</>)}
-      <label>Foto (maks. 5)</label>
+      <label>Foto (maks. 10)</label>
       <div className="thumbs">
         {f.foto_urls.map((u, i) => (
           <div className="thumb" key={u}><img src={u} alt={`foto ${i + 1}`} />
             <button type="button" onClick={() => setF({ ...f, foto_urls: f.foto_urls.filter((x) => x !== u) })} aria-label="Hapus foto">×</button></div>))}
       </div>
-      {f.foto_urls.length < 5 && <input type="file" accept="image/*" multiple onChange={tambahFoto} disabled={busy} style={{ marginTop: 8 }} />}
+      {f.foto_urls.length < 10 && <input type="file" accept="image/*" multiple onChange={tambahFoto} disabled={busy} style={{ marginTop: 8 }} />}
       {err && <div className="err" style={{ marginTop: 8 }}>{err}</div>}
       <div className="f"><button disabled={busy} onClick={simpan}>{busy ? 'Memproses…' : 'Simpan'}</button><button className="sec" disabled={busy} onClick={close}>Batal</button></div>
       {f.id && (

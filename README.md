@@ -75,3 +75,7 @@ Halaman:
 - Pasang: jalankan `migrasi_v9.sql` sekali di Supabase (prasyarat: `migrasi_v6.sql`). `migrasi_v8.sql` tidak perlu lagi. Lalu buat akun login di Authentication > Users > Add user (Auto Confirm) untuk tiga email di atas.
 - Peran ditentukan dari tabel `leaders` (berdasarkan email), bukan dari metadata akun. Akun yang tidak ada di tabel itu adalah PIC.
 - Tambah leaders: `insert into leaders (email, nama) values ('email@baru.org', 'Nama');` lalu buat akunnya di Authentication. Cabut akses: `delete from leaders where email = '...';`
+
+## Detail aset (v20)
+- Jalankan `migrasi_v12.sql` sekali (menambah kolom organisasi dan alamat pengaju pada aset, ikut tersalin saat pengajuan disetujui).
+- PIC > Data Aset: klik nama aset atau tombol **Detail** untuk melihat data selengkap form pengajuan (pengaju, pondok/panti, foto, dokumen santri, lokasi, link dokumentasi). Tombol **Edit aset** di dalam detail (atau tombol Edit di tabel) membuka form edit dengan urutan dan label yang sama seperti form pengajuan. Foto di aset kini maksimal 10.
