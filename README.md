@@ -53,6 +53,9 @@ Halaman:
 - Semua halaman responsif (PC dan HP). PIC: ikon rumah = kembali ke halaman awal, lonceng = pengingat (to-do, aksi, pengajuan).
 - Fungsi `statistik_publik` dari migrasi_v5.sql tidak dipakai lagi oleh halaman awal (aman dibiarkan).
 
+## Edit Mitra & Dana (v18)
+- PIC › Mitra & Dana: tombol **Edit** di setiap baris Kolaborasi mitra dan Penggunaan dana. Form terisi data itu; ubah lalu **Simpan perubahan** (atau **Batal**). Tidak perlu migrasi SQL. Untuk mengaktifkan edit di Stok Alat, tambahkan prop `bisaEdit` pada `CrudSederhana` di `app/pic/opname/page.js`.
+
 ## Istilah "admin" diganti "PIC" (v17)
 - Halaman pengelola kini di `/pic` (alamat lama `/admin` otomatis dialihkan). Semua tulisan "admin" di tampilan menjadi "PIC". Nama internal di database (`is_admin()`, policy `admin_*`) sengaja tidak diubah, jadi tidak perlu migrasi SQL.
 

@@ -9,8 +9,8 @@ export default function MitraDana() {
   return (
     <>
       <h1>Mitra &amp; Dana</h1>
-      <div className="m">Catat kolaborasi dengan mitra dan dana yang sudah digunakan. Semuanya otomatis masuk ke halaman Laporan sesuai periode.</div>
-      <CrudSederhana tabel="kolaborasi" judul="🤝 Kolaborasi mitra"
+      <div className="m">Catat, edit, dan hapus kolaborasi dengan mitra serta dana yang sudah digunakan. Semuanya otomatis masuk ke halaman Laporan sesuai periode.</div>
+      <CrudSederhana bisaEdit tabel="kolaborasi" judul="🤝 Kolaborasi mitra"
         fields={[
           { k: 'tanggal', l: 'Tanggal', t: 'date', wajib: true },
           { k: 'mitra', l: 'Nama mitra', wajib: true },
@@ -22,7 +22,7 @@ export default function MitraDana() {
         kolom={[{ k: 'tanggal', l: 'Tanggal' }, { k: 'mitra', l: 'Mitra' }, { k: 'jenis', l: 'Jenis' }, { k: 'program', l: 'Program' },
           { l: 'Nilai', f: (r) => rp(r.nilai) }, { k: 'deskripsi', l: 'Keterangan' }]}
         ringkas={(r) => `${r.length} kolaborasi, ${new Set(r.map((x) => x.mitra.trim().toLowerCase())).size} mitra, total nilai ${rp(sum(r, 'nilai'))}`} />
-      <CrudSederhana tabel="penggunaan_dana" judul="💰 Penggunaan dana"
+      <CrudSederhana bisaEdit tabel="penggunaan_dana" judul="💰 Penggunaan dana"
         fields={[
           { k: 'tanggal', l: 'Tanggal', t: 'date', wajib: true },
           { k: 'jumlah', l: 'Jumlah (Rp)', t: 'number', wajib: true },
