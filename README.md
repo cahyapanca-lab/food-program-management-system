@@ -53,6 +53,11 @@ Halaman:
 - Semua halaman responsif (PC dan HP). PIC: ikon rumah = kembali ke halaman awal, lonceng = pengingat (to-do, aksi, pengajuan).
 - Fungsi `statistik_publik` dari migrasi_v5.sql tidak dipakai lagi oleh halaman awal (aman dibiarkan).
 
+## Link dokumentasi aset + dana per program (v19)
+- Jalankan `migrasi_v11.sql` sekali (menambah kolom `aset.link_dokumentasi`). Isi di PIC > Data Aset > Edit (kolom "Link dokumentasi"); tampil sebagai kolom "Dokumentasi" di tabel aset, di dashboard leaders (hanya lihat), di profil Word/ZIP, dan di Excel aset.
+- Laporan: bagian baru **Dokumentasi aset** (semua aset atau aset baru periode ini, filter program, unduh Excel). Excel lengkap punya kolom "Link dokumentasi". PPT: nama aset baru yang punya link bisa diklik, ditambah slide "Dokumentasi Aset Baru".
+- Dana per program: di PIC > Mitra & Dana (tombol Semua/FFC/BUYD/Umum + urut tanggal/jumlah + total per program) dan di Laporan (pilihan program, kartu "Dana per program", sheet Excel "Dana per program", dan ringkasan per program di slide Penggunaan Dana PPT).
+
 ## Edit Mitra & Dana (v18)
 - PIC › Mitra & Dana: tombol **Edit** di setiap baris Kolaborasi mitra dan Penggunaan dana. Form terisi data itu; ubah lalu **Simpan perubahan** (atau **Batal**). Tidak perlu migrasi SQL. Untuk mengaktifkan edit di Stok Alat, tambahkan prop `bisaEdit` pada `CrudSederhana` di `app/pic/opname/page.js`.
 

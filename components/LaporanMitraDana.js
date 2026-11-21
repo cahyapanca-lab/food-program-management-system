@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useTable } from '@/lib/useTable'
 import { fmt, sum } from '@/lib/util'
 import { excelWorkbook } from '@/lib/ekspor'
@@ -17,8 +18,14 @@ export default function LaporanMitraDana({ mulai, akhir, label }) {
   const { rows: dana } = useTable('penggunaan_dana', { order: 'tanggal' })
   const { rows: alat } = useTable('alat')
   const { rows: opn } = useTable('opname', { order: 'tanggal' })
+  const [prog, setProg] = useState('')
   const dlm = (r) => r.tanggal >= mulai && r.tanggal <= akhir
-  const K = kol.filter(dlm), D = dana.filter(dlm), O = opn.filter(dlm)
+  const Dsemua = dana.filter(dlm)
+  const labelProg = prog === '_kosong' ? 'tanpa program' : prog
+  const K = kol.filter(dlm), O = opn.filter(dlm)
+  const D = prog ? Dsemua.filter((d) => (prog === '_kosong' ? !d.program : d.program === prog)) : Dsemua
+  const perProg = [...['FFC', 'BUYD', 'Umum'].map((k) => [k, sum(Dsemua.filter((d) => d.program === k), 'jumlah')]),
+    ...(Dsemua.some((d) => !d.program) ? [['Tanpa program', sum(Dsemua.filter((d) => !d.program), 'jumlah')]] : [])]
   const nama = Object.fromEntries(alat.map((a) => [a.id, a.nama]))
   const perKat = jml(D, (d) => d.kategori)
   const perSumber = jml(D, (d) => d.sumber)
@@ -27,16 +34,17 @@ export default function LaporanMitraDana({ mulai, akhir, label }) {
     return { a, o, n: O.filter((x) => x.alat_id === a.id).length }
   })
   const mitra = new Set(K.map((k) => k.mitra.trim().toLowerCase())).size
-  const kpi = [['Kolaborasi mitra', K.length], ['Mitra terlibat', mitra], ['Nilai kontribusi mitra', rp(sum(K, 'nilai'))], ['Dana digunakan', rp(sum(D, 'jumlah'))], ['Catatan opname', O.length]]
+  const kpi = [['Kolaborasi mitra', K.length], ['Mitra terlibat', mitra], ['Nilai kontribusi mitra', rp(sum(K, 'nilai'))], [prog ? `Dana digunakan (${labelProg})` : 'Dana digunakan', rp(sum(D, 'jumlah'))], ['Catatan opname', O.length]]
 
   const unduh = () => excelWorkbook([
     { nama: 'Kolaborasi mitra', data: K.map((k) => ({ Tanggal: k.tanggal, Mitra: k.mitra, Jenis: k.jenis, Program: k.program, 'Nilai (Rp)': k.nilai, Keterangan: k.deskripsi })) },
     { nama: 'Penggunaan dana', data: D.map((d) => ({ Tanggal: d.tanggal, Uraian: d.uraian, Kategori: d.kategori, Sumber: d.sumber, Program: d.program, 'Jumlah (Rp)': d.jumlah })) },
+    { nama: 'Dana per program', data: perProg.map(([k, v]) => ({ Program: k, 'Jumlah (Rp)': v, 'Jumlah transaksi': Dsemua.filter((d) => (k === 'Tanpa program' ? !d.program : d.program === k)).length })) },
     { nama: 'Dana per kategori', data: perKat.map(([k, v]) => ({ Kategori: k, 'Jumlah (Rp)': v })) },
     { nama: 'Dana per sumber', data: perSumber.map(([k, v]) => ({ Sumber: k, 'Jumlah (Rp)': v })) },
     { nama: 'Riwayat opname', data: O.map((o) => ({ Tanggal: o.tanggal, Alat: nama[o.alat_id], Jenis: o.periode, Baik: o.jumlah_baik, Rusak: o.jumlah_rusak, Hilang: o.jumlah_hilang, Petugas: o.petugas, Catatan: o.catatan })) },
     { nama: 'Kondisi alat terakhir', data: stok.map(({ a, o, n }) => ({ Alat: a.nama, Standar: a.jumlah_standar, 'Dicek terakhir': o?.tanggal, Baik: o?.jumlah_baik, Rusak: o?.jumlah_rusak, Hilang: o?.jumlah_hilang, 'Jumlah pengecekan': n })) },
-  ], `Mitra_Dana_Opname_${mulai}_${akhir}.xlsx`)
+  ], `Mitra_Dana_Opname${prog ? '_' + labelProg.replace(/\s+/g, '') : ''}_${mulai}_${akhir}.xlsx`)
 
   const mini = (judul, data) => (
     <div className="card" style={{ marginTop: 0 }}>
@@ -50,8 +58,17 @@ export default function LaporanMitraDana({ mulai, akhir, label }) {
     <div className="card">
       <h2>Kolaborasi mitra, dana &amp; stok alat</h2>
       <div className="m">Periode: <b>{label}</b></div>
+      <div className="f">
+        <label style={{ margin: 0 }}>Pilah dana menurut program
+          <select value={prog} onChange={(e) => setProg(e.target.value)}>
+            <option value="">Semua program</option><option value="FFC">FFC</option><option value="BUYD">BUYD</option><option value="Umum">Umum</option>
+            {Dsemua.some((d) => !d.program) && <option value="_kosong">Tanpa program</option>}
+          </select>
+        </label>
+        {prog && <span className="m">Berlaku untuk angka dana, rincian per kategori/sumber, dan Excel di bawah.</span>}
+      </div>
       <div className="grid" style={{ marginTop: 12 }}>{kpi.map(([n, v]) => <div className="card kpi" key={n}><b>{v}</b><span>{n}</span></div>)}</div>
-      <div className="grid2" style={{ marginTop: 12 }}>{mini('Dana per kategori', perKat)}{mini('Dana per sumber', perSumber)}</div>
+      <div className="grid" style={{ marginTop: 12 }}>{mini('Dana per program (periode)', perProg)}{mini(prog ? `Dana per kategori (${labelProg})` : 'Dana per kategori', perKat)}{mini(prog ? `Dana per sumber (${labelProg})` : 'Dana per sumber', perSumber)}</div>
       <h3 style={{ marginTop: 14 }}>Kondisi alat (pengecekan terakhir dalam periode)</h3>
       <div className="sc"><table>
         <thead><tr><th>Alat</th><th>Dicek terakhir</th><th>Baik</th><th>Rusak</th><th>Hilang</th><th>Jumlah pengecekan</th></tr></thead>

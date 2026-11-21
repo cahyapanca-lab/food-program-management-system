@@ -23,7 +23,7 @@ function petaLink(a) {
 const COLS = [
   ['Selesai', 'sudah_implementasi'], ['Nama aset', 'nama'], ['Kota', 'kota'], ['Cluster', 'cluster'],
   ['Program', 'program'], ['PM', 'jumlah_pm'], ['PIC', 'pic'], ['Telepon', null], ['Status', 'status'], ['Tahun perolehan / pembaruan', 'tahun_aset'],
-  ['Maps', null], ['WhatsApp', null], ['', null],
+  ['Dokumentasi', null], ['Maps', null], ['WhatsApp', null], ['', null],
 ]
 const SORTS = [
   ['nama:asc', 'Nama aset: A-Z'], ['nama:desc', 'Nama aset: Z-A'], ['kota:asc', 'Kota: A-Z'], ['kota:desc', 'Kota: Z-A'],
@@ -127,12 +127,13 @@ export default function AsetPage() {
                 <td>{a.jumlah_pm ?? '-'}</td><td>{a.pic || '-'}</td><td>{a.no_hp || '-'}</td>
                 <td>{a.status === 'perlu_update' ? 'Perlu update' : a.status === 'terbaru' ? 'Terbaru' : '-'}</td>
                 <td>{a.tahun_aset || '-'}{a.tahun_pembaruan ? ` / ${a.tahun_pembaruan}` : ''}</td>
+                <td>{a.link_dokumentasi ? <a target="_blank" rel="noreferrer" href={a.link_dokumentasi}>📎 Buka</a> : <span className="m">-</span>}</td>
                 <td><a target="_blank" rel="noreferrer" href={petaLink(a)}>Buka</a></td>
                 <td>{wa ? <a target="_blank" rel="noopener noreferrer" href={wa}><button type="button">Chat PIC</button></a> : <span className="m">Tidak ada nomor</span>}</td>
                 <td style={{ whiteSpace: 'nowrap' }}><button className="sec" onClick={() => setEdit(a)}>Edit</button> <button className="sec" style={{ color: '#d14343' }} onClick={() => setHapus(a)}>Hapus</button></td>
               </tr>)
           })}
-            {list.length === 0 && <tr><td colSpan={12} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
+            {list.length === 0 && <tr><td colSpan={14} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
           </tbody></table></div>
         )}
       </div>
@@ -217,9 +218,12 @@ function EditAset({ a, close, reload, onHapus, tugasTerkait = [] }) {
     const { id, dibuat_pada, ...rest } = f
     for (const k of ['jumlah_pm', 'kg_beras_per_hari', 'tahun_aset', 'tahun_pembaruan', 'latitude', 'longitude']) rest[k] = rest[k] === '' || rest[k] == null ? null : Number(rest[k])
     for (const k of ['program', 'status', 'implementasi_terakhir', 'kota', 'cluster', 'pic', 'no_hp', 'lokasi_maps', 'story', 'keterangan', 'alamat', 'pimpinan', 'rekomendasi']) if (!rest[k]) rest[k] = null
+    if ('link_dokumentasi' in rest) rest.link_dokumentasi = String(rest.link_dokumentasi ?? '').trim() || null
+    if (rest.link_dokumentasi && !/^https?:\/\//i.test(rest.link_dokumentasi)) return setErr('Link dokumentasi harus diawali http:// atau https://')
     setBusy(true)
     const r = id ? await supabase.from('aset').update(rest).eq('id', id) : await supabase.from('aset').insert(rest)
     setBusy(false)
+    if (r.error && /link_dokumentasi/.test(r.error.message)) return setErr(/aset_link_dokumentasi_cek/.test(r.error.message) ? 'Link dokumentasi harus diawali http:// atau https://' : 'Kolom link dokumentasi belum ada di database. Jalankan migrasi_v11.sql di Supabase.')
     if (r.error) return setErr(/aset_unik_nama_kota/.test(r.error.message) ? 'Aset dengan nama dan kota yang sama sudah ada. Cari di daftar lalu edit data yang lama, atau gunakan Cek duplikat.' : r.error.message)
     reload(); close()
   }
@@ -244,6 +248,8 @@ function EditAset({ a, close, reload, onHapus, tugasTerkait = [] }) {
       <label>Story aset<textarea rows={5} value={f.story ?? ''} onChange={set('story')} /></label>
       <label>Rekomendasi / keterangan tambahan (mis. program Ramadhan)<textarea rows={3} value={f.rekomendasi ?? ''} onChange={set('rekomendasi')} /></label>
       <label>Keterangan<textarea rows={2} value={f.keterangan ?? ''} onChange={set('keterangan')} /></label>
+      <label>Link dokumentasi (Google Drive / lainnya)<input value={f.link_dokumentasi ?? ''} onChange={set('link_dokumentasi')} placeholder="https://drive.google.com/…" inputMode="url" /></label>
+      {/^https?:\/\//i.test(f.link_dokumentasi || '') && <div className="m"><a href={f.link_dokumentasi} target="_blank" rel="noreferrer">Buka link dokumentasi ↗</a></div>}
       {(f.dokumen_santri || []).length > 0 && (<><label>Dokumen data santri (privat, hanya PIC)</label><DokumenList dokumen={f.dokumen_santri} /></>)}
       {tugasTerkait.length > 0 && (<><label>To-do terkait aset ini</label>{tugasTerkait.map((t) => <div className="row" key={t.id}>☑ {t.judul} <span className="m">- {STATUS_TUGAS[t.status]}{t.tenggat ? `, tenggat ${t.tenggat}` : ''}</span></div>)}</>)}
       <label>Foto (maks. 5)</label>

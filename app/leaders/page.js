@@ -234,7 +234,7 @@ function LeaderAset() {
         </>
       ) : (
         <div className="sc"><table>
-          <thead><tr><th>Nama</th><th>Kota</th><th>Cluster</th><th>Program</th><th>PM</th><th>Beras kg/hari</th><th>PIC</th><th>Status</th><th>Tahun</th><th>Implementasi</th><th>Peta</th></tr></thead>
+          <thead><tr><th>Nama</th><th>Kota</th><th>Cluster</th><th>Program</th><th>PM</th><th>Beras kg/hari</th><th>PIC</th><th>Status</th><th>Tahun</th><th>Implementasi</th><th>Dokumentasi</th><th>Peta</th></tr></thead>
           <tbody>
             {list.map((a) => (
               <Fragment key={a.id}>
@@ -246,11 +246,13 @@ function LeaderAset() {
                   <td>{a.status === 'perlu_update' ? 'Perlu update' : a.status === 'terbaru' ? 'Terbaru' : '-'}</td>
                   <td>{a.tahun_aset || '-'}{a.tahun_pembaruan ? ` / ${a.tahun_pembaruan}` : ''}</td>
                   <td>{a.sudah_implementasi ? '✅ Sudah' : 'Belum'}</td>
+                  <td>{a.link_dokumentasi ? <a target="_blank" rel="noreferrer" href={a.link_dokumentasi} onClick={(e) => e.stopPropagation()}>📎 Buka</a> : '-'}</td>
                   <td>{linkPeta(a) ? <a target="_blank" rel="noreferrer" href={linkPeta(a)} onClick={(e) => e.stopPropagation()}>Buka</a> : '-'}</td>
                 </tr>
                 {buka === a.id && (
-                  <tr><td colSpan={11} style={{ whiteSpace: 'normal' }}>
+                  <tr><td colSpan={12} style={{ whiteSpace: 'normal' }}>
                     <Rinci baris={[
+                      ['Dokumentasi', a.link_dokumentasi ? <a target="_blank" rel="noreferrer" href={a.link_dokumentasi}>Buka link dokumentasi ↗</a> : ''],
                       ['Alamat', a.alamat], ['Pimpinan', a.pimpinan], ['Keterangan', a.keterangan],
                       ['Implementasi terakhir', a.implementasi_terakhir ? tglPanjang(a.implementasi_terakhir) : ''],
                       ['Cerita / latar belakang', a.story], ['Rekomendasi', a.rekomendasi],
@@ -261,7 +263,7 @@ function LeaderAset() {
                 )}
               </Fragment>
             ))}
-            {list.length === 0 && <tr><td colSpan={11} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
+            {list.length === 0 && <tr><td colSpan={12} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
           </tbody>
         </table></div>
       )}

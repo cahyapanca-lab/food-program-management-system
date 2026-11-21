@@ -6,6 +6,7 @@ import { buatRekap, hitungRekap, excelRekapLengkap } from '@/lib/rekap'
 import { excelJadwal } from '@/lib/ekspor'
 import TombolUnduh from '@/components/TombolUnduh'
 import LaporanMitraDana from '@/components/LaporanMitraDana'
+import LaporanDokumentasi from '@/components/LaporanDokumentasi'
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 const fmtTgl = (d) => d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -81,6 +82,7 @@ export default function LaporanPage() {
           Excel lengkap berisi sheet ringkasan, aksi periode, kendala, seluruh data aset (data lama dan baru, ada kolom sumber data), pengajuan, relawan, dan to-do.
         </div>
       </div>
+      <LaporanDokumentasi aset={aset} asetBaru={st.asetBaru} label={periode.label} />
       <LaporanMitraDana mulai={periode.mulai} akhir={periode.akhir} label={periode.label} />
     </>
   )

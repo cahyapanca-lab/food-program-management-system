@@ -22,7 +22,7 @@ export default function MitraDana() {
         kolom={[{ k: 'tanggal', l: 'Tanggal' }, { k: 'mitra', l: 'Mitra' }, { k: 'jenis', l: 'Jenis' }, { k: 'program', l: 'Program' },
           { l: 'Nilai', f: (r) => rp(r.nilai) }, { k: 'deskripsi', l: 'Keterangan' }]}
         ringkas={(r) => `${r.length} kolaborasi, ${new Set(r.map((x) => x.mitra.trim().toLowerCase())).size} mitra, total nilai ${rp(sum(r, 'nilai'))}`} />
-      <CrudSederhana bisaEdit tabel="penggunaan_dana" judul="💰 Penggunaan dana"
+      <CrudSederhana bisaEdit pilahProgram tabel="penggunaan_dana" judul="💰 Penggunaan dana"
         fields={[
           { k: 'tanggal', l: 'Tanggal', t: 'date', wajib: true },
           { k: 'jumlah', l: 'Jumlah (Rp)', t: 'number', wajib: true },
@@ -33,7 +33,7 @@ export default function MitraDana() {
         ]}
         kolom={[{ k: 'tanggal', l: 'Tanggal' }, { k: 'uraian', l: 'Uraian' }, { k: 'kategori', l: 'Kategori' }, { k: 'sumber', l: 'Sumber' },
           { k: 'program', l: 'Program' }, { l: 'Jumlah', f: (r) => rp(r.jumlah) }]}
-        ringkas={(r) => `Total dana digunakan (semua data): ${rp(sum(r, 'jumlah'))}`} />
+        ringkas={(r, fp) => `Total dana digunakan (${fp ? (fp === '_kosong' ? 'tanpa program' : fp) : 'semua data'}): ${rp(sum(r, 'jumlah'))}`} />
     </>
   )
 }
