@@ -5,7 +5,7 @@ import JadwalPublik from '@/components/JadwalPublik'
 export default function Home() {
   return (
     <>
-      <TopBar masukAdmin masukLeaders />
+      <TopBar masukPIC masukLeaders />
       <main className="wrap" style={{ maxWidth: 940 }}>
         <section className="hero-home">
           <h1>Program Pangan</h1>
