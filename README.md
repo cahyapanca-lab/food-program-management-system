@@ -53,6 +53,9 @@ Halaman:
 - Semua halaman responsif (PC dan HP). Admin: ikon rumah = kembali ke halaman awal, lonceng = pengingat (to-do, aksi, pengajuan).
 - Fungsi `statistik_publik` dari migrasi_v5.sql tidak dipakai lagi oleh halaman awal (aman dibiarkan).
 
+## Hapus aset (v16)
+- Admin › Data Aset: tombol **Hapus** di setiap baris dan **🗑 Hapus aset** di form edit. Ada konfirmasi yang menampilkan jumlah jadwal aksi, to-do, dan pengajuan yang terhubung (data itu tetap ada, hanya terlepas dari aset). Penghapusan permanen; foto dan dokumen di penyimpanan tidak ikut dihapus. Tidak perlu migrasi SQL.
+
 ## Dashboard Leaders (v9: hanya lihat + komentar)
 - Alamat: `/leaders`. Tombol **Masuk leaders** ada di halaman awal, di samping **Masuk admin**.
 - Leaders (manaf@, rani@, umar@sekolahrelawan.org) hanya bisa MELIHAT ringkasan (aset, aksi, kendala, to-do terlambat, stok alat, mitra, dana, peta) dan MENULIS KOMENTAR. Tidak ada tombol ubah/hapus, dan database menolak perubahan dari akun leaders.

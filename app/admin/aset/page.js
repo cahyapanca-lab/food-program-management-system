@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useTable } from '@/lib/useTable'
 import { uploadFoto } from '@/lib/storage'
@@ -38,6 +38,7 @@ export default function AsetPage() {
   const [fp, setFp] = useState(''); const [fi, setFi] = useState('')
   const [sort, setSort] = useState('nama:asc')
   const [edit, setEdit] = useState(null)
+  const [hapus, setHapus] = useState(null)
   const [tampil, setTampil] = useState('tabel')
   const [cek, setCek] = useState(false)
   const nDup = useMemo(() => {
@@ -128,19 +129,64 @@ export default function AsetPage() {
                 <td>{a.tahun_aset || '-'}{a.tahun_pembaruan ? ` / ${a.tahun_pembaruan}` : ''}</td>
                 <td><a target="_blank" rel="noreferrer" href={petaLink(a)}>Buka</a></td>
                 <td>{wa ? <a target="_blank" rel="noopener noreferrer" href={wa}><button type="button">Chat PIC</button></a> : <span className="m">Tidak ada nomor</span>}</td>
-                <td><button className="sec" onClick={() => setEdit(a)}>Edit</button></td>
+                <td style={{ whiteSpace: 'nowrap' }}><button className="sec" onClick={() => setEdit(a)}>Edit</button> <button className="sec" style={{ color: '#d14343' }} onClick={() => setHapus(a)}>Hapus</button></td>
               </tr>)
           })}
             {list.length === 0 && <tr><td colSpan={12} className="m" style={{ textAlign: 'center', padding: 24 }}>Tidak ada aset yang cocok.</td></tr>}
           </tbody></table></div>
         )}
       </div>
-      {edit && <EditAset a={edit} close={() => setEdit(null)} reload={reload} tugasTerkait={edit.id ? tugas.filter((t) => t.aset_id === edit.id) : []} />}
+      {edit && <EditAset a={edit} close={() => setEdit(null)} reload={reload} onHapus={setHapus} tugasTerkait={edit.id ? tugas.filter((t) => t.aset_id === edit.id) : []} />}
+      {hapus && <HapusAset a={hapus} nTugas={tugas.filter((t) => t.aset_id === hapus.id).length} close={() => setHapus(null)} selesai={() => { setHapus(null); setEdit(null); reload() }} />}
     </>
   )
 }
 
-function EditAset({ a, close, reload, tugasTerkait = [] }) {
+// Hapus aset (permanen). Jadwal aksi, to-do, dan pengajuan yang terhubung TIDAK ikut terhapus; hanya terlepas dari aset ini.
+function HapusAset({ a, nTugas, close, selesai }) {
+  const [n, setN] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  useEffect(() => {
+    let batal = false
+    Promise.all(['jadwal_aksi', 'pengajuan'].map((t) => supabase.from(t).select('id', { count: 'exact', head: true }).eq('aset_id', a.id)))
+      .then(([j, p]) => { if (!batal) setN({ jadwal: j.count || 0, pengajuan: p.count || 0 }) })
+    return () => { batal = true }
+  }, [a.id])
+
+  async function hapus() {
+    setBusy(true); setErr('')
+    const { data, error } = await supabase.from('aset').delete().eq('id', a.id).select('id')
+    setBusy(false)
+    if (error) return setErr(error.message)
+    if (!data || data.length === 0) return setErr('Tidak ada data yang terhapus. Aset mungkin sudah dihapus, atau akunmu tidak punya izin.')
+    selesai()
+  }
+  return (
+    <div className="modal" onClick={() => !busy && close()}><div onClick={(e) => e.stopPropagation()}>
+      <h2>Hapus aset ini?</h2>
+      <div className="card" style={{ margin: '8px 0' }}>
+        <b>{a.nama}</b>
+        <div className="m">{[a.kota, a.cluster, a.program].filter(Boolean).join(' · ') || '-'}{a.jumlah_pm ? ` · ${a.jumlah_pm} PM` : ''}</div>
+      </div>
+      <div>Aset akan dihapus <b>permanen</b> dan tidak bisa dikembalikan.</div>
+      <div className="m" style={{ marginTop: 6 }}>
+        {n === null ? 'Memeriksa data terkait…' : (n.jadwal + n.pengajuan + nTugas === 0
+          ? 'Tidak ada jadwal aksi, to-do, atau pengajuan yang terhubung ke aset ini.'
+          : `Data terkait tetap ada dan hanya terlepas dari aset ini: ${n.jadwal} jadwal aksi, ${nTugas} to-do, ${n.pengajuan} pengajuan.`)}
+        {' '}Foto dan dokumen di penyimpanan tidak ikut dihapus.
+      </div>
+      <div className="f"><TombolUnduh label="⬇ Cadangkan dulu (Word)" onRun={() => unduhDocx(profilAset(a))} /></div>
+      {err && <div className="err" style={{ marginTop: 8 }}>{err}</div>}
+      <div className="f">
+        <button disabled={busy || n === null} style={{ background: '#d14343', borderColor: '#d14343', color: '#fff' }} onClick={hapus}>{busy ? 'Menghapus…' : 'Ya, hapus permanen'}</button>
+        <button className="sec" disabled={busy} onClick={close}>Batal</button>
+      </div>
+    </div></div>
+  )
+}
+
+function EditAset({ a, close, reload, onHapus, tugasTerkait = [] }) {
   const [f, setF] = useState({ ...a, foto_urls: a.foto_urls || [] })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -213,6 +259,7 @@ function EditAset({ a, close, reload, tugasTerkait = [] }) {
         <div className="f">
           <TombolUnduh label="⬇ Profil (Word)" onRun={() => unduhDocx(profilAset(f))} />
           <TombolUnduh label="⬇ Paket ZIP (untuk Google Drive)" onRun={() => unduhPaket(profilAset(f))} />
+          {onHapus && <button type="button" className="sec" style={{ color: '#d14343' }} disabled={busy} onClick={() => onHapus(a)}>🗑 Hapus aset</button>}
         </div>
       )}
     </div></div>
