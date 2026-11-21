@@ -75,10 +75,10 @@ function Login() {
 }
 
 const BAGIAN = ['Umum', 'Aset', 'Pengajuan', 'Aksi / jadwal', 'Kendala', 'To-do', 'Stok alat', 'Mitra & dana', 'Peta']
-const LABEL_KOMENTAR = { baru: 'Terkirim', dibaca: 'Sudah dibaca admin', ditanggapi: 'Ditanggapi' }
+const LABEL_KOMENTAR = { baru: 'Terkirim', dibaca: 'Sudah dibaca PIC', ditanggapi: 'Ditanggapi' }
 const wktu = (s) => new Date(s).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
-// Leaders hanya bisa MENULIS komentar baru dan MEMBACA balasan admin; tidak ada tombol ubah/hapus.
+// Leaders hanya bisa MENULIS komentar baru dan MEMBACA balasan PIC; tidak ada tombol ubah/hapus.
 function Komentar({ profil, periode }) {
   const [rows, setRows] = useState([])
   const [err, setErr] = useState('')
@@ -106,7 +106,7 @@ function Komentar({ profil, periode }) {
     const { error } = await supabase.from('komentar_leader').insert({ bagian, isi: teks, periode })
     setBusy(false)
     if (error) return setErr(error.message)
-    setIsi(''); setErr(''); setMsg('Komentar terkirim ke admin.'); muat()
+    setIsi(''); setErr(''); setMsg('Komentar terkirim ke PIC.'); muat()
   }
 
   return (
@@ -115,7 +115,7 @@ function Komentar({ profil, periode }) {
       <div className="card" style={{ marginTop: 8 }}>
         {profil?.leader ? (
           <form onSubmit={kirim}>
-            <div className="m" style={{ marginBottom: 8 }}>Tulis masukan untuk tim admin. Data di dashboard ini hanya bisa dilihat, tidak bisa diubah.</div>
+            <div className="m" style={{ marginBottom: 8 }}>Tulis masukan untuk tim PIC. Data di dashboard ini hanya bisa dilihat, tidak bisa diubah.</div>
             <label>Bagian yang dikomentari
               <select value={bagian} onChange={(e) => setBagian(e.target.value)}>{BAGIAN.map((b) => <option key={b}>{b}</option>)}</select>
             </label>
@@ -126,7 +126,7 @@ function Komentar({ profil, periode }) {
             {msg && <div className="ok">{msg}</div>}
           </form>
         ) : (
-          <div className="m">Kamu masuk sebagai admin (pratinjau). Komentar hanya bisa ditulis oleh leaders; balas komentar di <Link href="/admin/komentar">Admin › Komentar</Link>.</div>
+          <div className="m">Kamu masuk sebagai PIC (pratinjau). Komentar hanya bisa ditulis oleh leaders; balas komentar di <Link href="/pic/komentar">PIC › Komentar</Link>.</div>
         )}
         {err && <div className="err" style={{ marginTop: 8 }}>{err}</div>}
       </div>
@@ -139,7 +139,7 @@ function Komentar({ profil, periode }) {
             <span className="sp" /><span className={`tag ${k.status}`}>{LABEL_KOMENTAR[k.status] || k.status}</span>
           </div>
           <div className="tx">{k.isi}</div>
-          {k.balasan && <div className="bl"><b>Balasan admin</b>{k.dibalas_pada ? <span className="m"> · {wktu(k.dibalas_pada)}</span> : null}<div className="tx">{k.balasan}</div></div>}
+          {k.balasan && <div className="bl"><b>Balasan PIC</b>{k.dibalas_pada ? <span className="m"> · {wktu(k.dibalas_pada)}</span> : null}<div className="tx">{k.balasan}</div></div>}
         </div>
       ))}
     </>
@@ -293,7 +293,7 @@ function LeaderPengajuan() {
         ))}
         <input placeholder="Cari pondok, kota, pengaju…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 220px' }} />
       </div>
-      <div className="m" style={{ margin: '8px 0' }}>Hanya untuk dilihat. Persetujuan dilakukan admin; nomor telepon dan dokumen santri tidak ditampilkan.</div>
+      <div className="m" style={{ margin: '8px 0' }}>Hanya untuk dilihat. Persetujuan dilakukan PIC; nomor telepon dan dokumen santri tidak ditampilkan.</div>
       <div className="sc"><table>
         <thead><tr><th>Tanggal</th><th>Pondok / panti</th><th>Kota</th><th>Jenis</th><th>Program</th><th>Penghuni</th><th>Pengaju</th><th>Status</th></tr></thead>
         <tbody>

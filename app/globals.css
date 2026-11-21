@@ -71,7 +71,7 @@ th.s{cursor:pointer;user-select:none}
 .lb{flex:none;border-radius:8px;padding:2px 9px;font-size:12px;font-weight:700;background:var(--a2);color:var(--a);white-space:nowrap}
 .lb.urgent{background:var(--o);color:#fff}.lb.bad{background:var(--r);color:#fff}
 
-/* ===== Navigasi admin ===== */
+/* ===== Navigasi PIC ===== */
 .nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--c);border-bottom:1px solid var(--b)}
 .nav .tabs-scroll{display:flex;gap:4px;overflow-x:auto;flex:1;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .nav .tabs-scroll::-webkit-scrollbar{display:none}
@@ -171,7 +171,7 @@ iframe.map{width:100%;height:210px;border:0;border-radius:12px;margin-top:10px}
   th,td{padding:8px}
 }
 
-/* ===== Menu admin: satu ikon di HP / tablet ===== */
+/* ===== Menu PIC: satu ikon di HP / tablet ===== */
 .nav .menu-btn,.nav .menu-judul{display:none}
 @media(max-width:860px){
   .nav .tabs-scroll,.nav .keluar-desk{display:none}

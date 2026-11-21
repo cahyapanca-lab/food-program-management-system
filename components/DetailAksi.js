@@ -4,7 +4,7 @@ import PetaEmbed from '@/components/PetaEmbed'
 import { IkonTutup } from '@/components/Ikon'
 import { statusAksi, STATUS_LABEL, STATUS_IKON } from '@/lib/util'
 
-// Detail satu jadwal aksi (modal). Kolom internal (pelaksana, kendala, relawan, dll) hanya muncul bila datanya ada (admin).
+// Detail satu jadwal aksi (modal). Kolom internal (pelaksana, kendala, relawan, dll) hanya muncul bila datanya ada (PIC).
 export default function DetailAksi({ e, close }) {
   useEffect(() => {
     const k = (ev) => { if (ev.key === 'Escape') close() }

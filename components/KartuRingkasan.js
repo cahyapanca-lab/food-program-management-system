@@ -1,7 +1,7 @@
 const fmt = (n) => Number(n || 0).toLocaleString('id-ID')
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0)
 
-// Kartu ringkasan angka. Dipakai di dashboard admin dan halaman awal agar tampilannya sama.
+// Kartu ringkasan angka. Dipakai di dashboard PIC dan halaman awal agar tampilannya sama.
 export default function KartuRingkasan({ totalAset, pm, asetBaru, asetImpl, aksiBulan, aksiTerlaksana }) {
   const now = new Date()
   const tahun = now.getFullYear()

@@ -59,7 +59,7 @@ export default function TugasForm({ t, aset = [], jadwal = [], pj = [], close, r
         <select value={f.jadwal_id ?? ''} onChange={pilihAksi}><option value="">-</option>{aksiUrut.map((j) => <option key={j.id} value={j.id}>{j.tanggal} - {j.lokasi}</option>)}</select>
       </label>
       <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input type="checkbox" checked={!!f.tampil_di_jadwal} onChange={(e) => setF({ ...f, tampil_di_jadwal: e.target.checked })} /> Tampilkan di kalender Jadwal Aksi (admin, pada tanggal tenggat)
+        <input type="checkbox" checked={!!f.tampil_di_jadwal} onChange={(e) => setF({ ...f, tampil_di_jadwal: e.target.checked })} /> Tampilkan di kalender Jadwal Aksi (PIC, pada tanggal tenggat)
       </label>
       {err && <div className="err" style={{ marginTop: 8 }}>{err}</div>}
       <div className="f"><button disabled={busy} onClick={simpan}>{busy ? 'Menyimpan…' : 'Simpan'}</button><button className="sec" onClick={close}>Batal</button>{f.id && <button className="red" onClick={hapus}>Hapus</button>}</div>

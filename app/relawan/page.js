@@ -75,8 +75,8 @@ export default function Relawan() {
     if (terisi < MIN_FOTO) return setMsg(`Foto dokumentasi minimal ${MIN_FOTO} (baru ${terisi}).`)
     if (!loc && !f.lokasi_maps.trim()) return setMsg('Ambil titik lokasi atau tempel link Google Maps.')
     const { data: ada } = await supabase.rpc('cek_aset_ada', { p_nama: f.nama_pondok, p_kota: f.kota })
-    if (ada === 'aset') return setMsg('Aset dengan nama dan kota ini sudah terdaftar, jadi tidak perlu diajukan lagi. Hubungi admin bila datanya perlu diperbarui.')
-    if (ada === 'menunggu') return setMsg('Pengajuan untuk aset ini sudah masuk dan sedang diperiksa admin.')
+    if (ada === 'aset') return setMsg('Aset dengan nama dan kota ini sudah terdaftar, jadi tidak perlu diajukan lagi. Hubungi PIC bila datanya perlu diperbarui.')
+    if (ada === 'menunggu') return setMsg('Pengajuan untuk aset ini sudah masuk dan sedang diperiksa PIC.')
     setBusy(true)
     try {
       const urls = []
@@ -171,7 +171,7 @@ export default function Relawan() {
         )}
 
         <h2 style={{ marginTop: 22 }}>Data Santri <span className="m">(opsional)</span></h2>
-        <div className="m">Unggah daftar / data santri dalam format PDF, Word, atau gambar (maks. {MAX_DOK} berkas, {MAX_DOK_MB} MB per berkas). Berkas disimpan privat dan hanya bisa dibuka admin Program Pangan.</div>
+        <div className="m">Unggah daftar / data santri dalam format PDF, Word, atau gambar (maks. {MAX_DOK} berkas, {MAX_DOK_MB} MB per berkas). Berkas disimpan privat dan hanya bisa dibuka PIC Program Pangan.</div>
         <div className="f"><input type="file" accept=".pdf,.doc,.docx,image/*" multiple onChange={pilihDokumen} disabled={docs.length >= MAX_DOK} /></div>
         {docs.map((d, i) => (
           <div className="row" key={`${d.name}-${i}`}>📄 {d.name} <span className="m">({(d.size / 1024 / 1024).toFixed(1)} MB)</span>

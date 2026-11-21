@@ -6,7 +6,7 @@ import DetailAksi from '@/components/DetailAksi'
 import { fmt, sum, porsiOf, kgOf, iso, statusAksi, bermasalah, labelStatus, STATUS_IKON } from '@/lib/util'
 
 // Kalender + ringkasan + daftar aksi untuk bulan yang dipilih.
-// Jika onEvent diberikan (admin), klik jadwal memanggilnya; jika tidak, tampil detail.
+// Jika onEvent diberikan (PIC), klik jadwal memanggilnya; jika tidak, tampil detail.
 export default function JadwalBulan({ events, onDay, onEvent, extra = [] }) {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
   const [sel, setSel] = useState(null)

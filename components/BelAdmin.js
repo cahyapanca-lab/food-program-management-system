@@ -5,5 +5,5 @@ import Bel from '@/components/Bel'
 
 export default function BelAdmin({ jadwal, tugas, pengajuan }) {
   const items = pengingatAdmin({ jadwal, tugas, pengajuan, hari: iso(new Date()) })
-  return <Bel items={items} badge={items.length} judul="Pengingat admin" />
+  return <Bel items={items} badge={items.length} judul="Pengingat PIC" />
 }
